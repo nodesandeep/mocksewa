@@ -7,13 +7,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     cron \
     && rm -rf /var/lib/apt/lists/*
 
-COPY ./requirements.txt .
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Prepare Mount Directory for SQLite Persistence
 RUN mkdir -p /app/data
 
-COPY ./ ./
+COPY . .
 
 # Railway provides dynamic $PORT at runtime
 EXPOSE 8000
