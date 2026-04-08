@@ -1,0 +1,4 @@
+question,option_a,option_b,option_c,option_d,correct_index,marks,negative_marks
+"What is the unit of Electrical Resistance?","Volt","Ampere","Ohm","Watt",2,1,0.2
+"Which instrument is used to measure current?","Voltmeter","Ammeter","Ohmeter","Galvanometer",1,1,0.2
+"The safety rules for NEA employees are governed by?","Electricity Act 2048","Labor Act","Civil Code","NEA Internal Bylaws",0,1,0.2

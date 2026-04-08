@@ -1,0 +1,73 @@
+services:
+  # ── PostgreSQL Database ──────────────────────────────────────────────────
+  db:
+    image: postgres:15-alpine
+    container_name: mocksewa_db
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-mocksewa_secret}
+      POSTGRES_DB: mocksewa
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d mocksewa"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── FastAPI Backend ──────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: mocksewa_backend
+    restart: always
+    volumes:
+      - ./backend:/code
+      - backup_data:/app/backups
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://admin:${DB_PASSWORD:-mocksewa_secret}@db:5432/mocksewa
+      SECRET_KEY: ${SECRET_KEY:-change_this_in_production_32chars!!}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # ── React Frontend (Nginx) ───────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: mocksewa_frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    environment:
+      - VITE_API_URL=http://backend:8000
+      - VITE_WS_URL=ws://backend:8000
+
+  # ── Automated Backup Cron ────────────────────────────────────────────────
+  backup:
+    image: postgres:15-alpine
+    container_name: mocksewa_backup
+    restart: always
+    volumes:
+      - backup_data:/app/backups
+      - ./backend/backup.sh:/backup.sh:ro
+    environment:
+      DATABASE_URL: postgresql://admin:${DB_PASSWORD:-mocksewa_secret}@db:5432/mocksewa
+    entrypoint: >
+      sh -c "echo '0 2 * * * sh /backup.sh' | crontab - && crond -f"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pg_data:
+  backup_data:

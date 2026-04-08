@@ -1,0 +1,124 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Global Reset & Base ─────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0f0f23;
+  --surface: #13132b;
+  --surface-2: #1a1a35;
+  --border: rgba(99,102,241,0.2);
+  --brand: #6366f1;
+  --brand-light: #818cf8;
+  --text: #e2e8f0;
+  --text-muted: #94a3b8;
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+}
+
+html { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); scroll-behavior: smooth; }
+body { min-height: 100vh; }
+
+/* ── Scrollbar ───────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--brand); border-radius: 3px; }
+
+/* ── Glass Card ──────────────────────────────────────────────── */
+.glass {
+  background: rgba(19, 19, 43, 0.8);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+/* ── Gradient Text ───────────────────────────────────────────── */
+.gradient-text {
+  background: linear-gradient(135deg, #818cf8 0%, #c084fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Brand Button ────────────────────────────────────────────── */
+.btn-brand {
+  @apply px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  box-shadow: 0 4px 15px rgba(99,102,241,0.4);
+}
+.btn-brand:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(99,102,241,0.5); }
+.btn-brand:active { transform: translateY(0); }
+
+.btn-ghost {
+  @apply px-5 py-2.5 rounded-xl font-medium text-slate-300 transition-all duration-200;
+  border: 1px solid var(--border);
+}
+.btn-ghost:hover { background: var(--surface-2); color: white; border-color: var(--brand); }
+
+/* ── Input ───────────────────────────────────────────────────── */
+.input-field {
+  @apply w-full px-4 py-3 rounded-xl text-white placeholder-slate-500 outline-none transition-all duration-200;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  font-family: 'Inter', sans-serif;
+}
+.input-field:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
+
+/* ── Badge ───────────────────────────────────────────────────── */
+.badge { @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold; }
+.badge-success { background: rgba(16,185,129,0.15); color: var(--success); }
+.badge-danger  { background: rgba(239,68,68,0.15);  color: var(--danger); }
+.badge-brand   { background: rgba(99,102,241,0.15); color: var(--brand-light); }
+.badge-warn    { background: rgba(245,158,11,0.15); color: var(--warning); }
+
+/* ── Progress Bar ────────────────────────────────────────────── */
+.progress-bar { @apply h-2 rounded-full overflow-hidden; background: var(--surface-2); }
+.progress-fill { @apply h-full rounded-full transition-all duration-700; background: linear-gradient(90deg, #6366f1, #a78bfa); }
+
+/* ── Quiz Option ─────────────────────────────────────────────── */
+.quiz-option {
+  @apply w-full text-left px-5 py-4 rounded-xl font-medium transition-all duration-150 cursor-pointer;
+  background: var(--surface-2);
+  border: 2px solid transparent;
+}
+.quiz-option:hover:not(.selected):not(.correct):not(.wrong) { border-color: var(--brand); background: rgba(99,102,241,0.1); }
+.quiz-option.selected { border-color: var(--brand); background: rgba(99,102,241,0.15); }
+.quiz-option.correct  { border-color: var(--success); background: rgba(16,185,129,0.15); color: var(--success); }
+.quiz-option.wrong    { border-color: var(--danger);  background: rgba(239,68,68,0.15);  color: var(--danger); }
+
+/* ── Sidebar ─────────────────────────────────────────────────── */
+.sidebar { @apply h-screen sticky top-0 overflow-y-auto flex flex-col; background: var(--surface); border-right: 1px solid var(--border); }
+
+/* ── Animated gradient bg ────────────────────────────────────── */
+.hero-bg {
+  background: radial-gradient(ellipse at top left, rgba(99,102,241,0.15) 0%, transparent 50%),
+              radial-gradient(ellipse at bottom right, rgba(168,85,247,0.1) 0%, transparent 50%),
+              var(--bg);
+}
+
+/* ── Tooltip ─────────────────────────────────────────────────── */
+.tooltip {
+  @apply absolute z-50 px-3 py-1.5 text-xs font-medium rounded-lg pointer-events-none;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+/* ── Animations ──────────────────────────────────────────────── */
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface) 50%, var(--surface-2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+@keyframes countdownPulse {
+  0%, 100% { color: var(--text); }
+  50% { color: var(--danger); }
+}
+.timer-warning { animation: countdownPulse 1s ease-in-out infinite; }

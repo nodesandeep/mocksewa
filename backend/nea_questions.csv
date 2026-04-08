@@ -1,0 +1,3 @@
+question,option_a,option_b,option_c,option_d,correct_index,marks,negative_marks,explanation
+"What is the standard frequency of AC in Nepal?","60 Hz","50 Hz","55 Hz","45 Hz",1,1,0.2,"Nepal uses the standard frequency of 50 Hz for its national grid."
+"Which device protects a circuit from overcurrent?","Voltmeter","Transformer","Circuit Breaker","Isolator",2,1,0.2,"A Circuit Breaker automatically interrupts the current flow if a fault is detected."
