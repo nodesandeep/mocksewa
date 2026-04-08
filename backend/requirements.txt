@@ -9,3 +9,4 @@ python-multipart
 pandas
 websockets
 httpx
+email-validator
