@@ -27,10 +27,14 @@ def register(payload: UserRegister, db: Session = Depends(get_session)):
     existing = db.exec(select(User).where(User.email == payload.email)).first()
     if existing:
         raise HTTPException(400, "Email already registered")
+    is_first_user = db.exec(select(User)).first() is None
+
     user = User(
         email=payload.email,
         hashed_password=hash_password(payload.password),
         full_name=payload.full_name,
+        is_admin=is_first_user,
+        is_approved=is_first_user,
     )
     db.add(user)
     db.commit()
