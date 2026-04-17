@@ -1,4 +1,4 @@
-# MockSewa v2.0 — Antigravity Architecture 🚀
+# MockSewa v2.0 —  Architecture 🚀
 
 > **Nepal's professional-grade exam preparation platform** — FastAPI + React TypeScript + PostgreSQL + Docker
 
