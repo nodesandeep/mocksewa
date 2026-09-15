@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Allow: /practice/
+Disallow: /student/
+Disallow: /admin/
+Disallow: /_next/
+Disallow: /api/
+
+Sitemap: https://mymocksewa.com/sitemap.xml

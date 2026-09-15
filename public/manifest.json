@@ -1,0 +1,64 @@
+{
+  "name": "myMockSewa – Nepal Exam Prep",
+  "short_name": "myMockSewa",
+  "description": "Nepal's #1 mock test platform for PSC, NEA, NEC, NMC & TSC. Crack your dream exam with scientific mock tests and expert hints.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#2563eb",
+  "background_color": "#ffffff",
+  "lang": "en-NP",
+  "categories": ["education", "productivity"],
+  "icons": [
+    {
+      "src": "/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Start Exam",
+      "short_name": "Exam",
+      "description": "Jump straight into your exam preparation",
+      "url": "/student",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Login",
+      "short_name": "Login",
+      "description": "Sign in to your account",
+      "url": "/login",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/assets/hero-mockup.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "myMockSewa Dashboard"
+    }
+  ]
+}

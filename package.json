@@ -1,0 +1,42 @@
+{
+  "name": "edu-nepal-v2",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "postbuild": "node scripts/generate-sitemap.js"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.17.3",
+    "dotenv": "^17.4.2",
+    "firebase": "^12.11.0",
+    "firebase-admin": "^13.8.0",
+    "framer-motion": "^12.38.0",
+    "katex": "^0.18.7",
+    "lucide-react": "^1.8.0",
+    "next": "16.2.3",
+    "papaparse": "^5.5.3",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-markdown": "^10.1.0",
+    "recharts": "^3.8.1",
+    "rehype-katex": "^7.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.3",
+    "sharp": "^0.34.5",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

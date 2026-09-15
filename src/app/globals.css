@@ -1,0 +1,67 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;700&display=swap');
+@import "tailwindcss";
+
+:root {
+  --background: #f8fafc; /* Slate 50 */
+  --surface: #ffffff;
+  --text-primary: #0f172a; /* Slate 900 */
+  --text-secondary: #64748b; /* Slate 500 */
+  --border: #e2e8f0;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-textPrimary: var(--text-primary);
+  --color-textSecondary: var(--text-secondary);
+  --color-border: var(--border);
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-nepali: 'Noto Sans Devanagari', sans-serif;
+  
+  --color-brand: #1E3A8A; /* Navy */
+  --color-brand-accent: #1e40af;
+  --color-brand-navy: #1E3A8A;
+  --color-brand-crimson: #B91C1C;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-textPrimary transition-all duration-500 antialiased;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-textPrimary font-extrabold tracking-tight;
+  }
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.2);
+  border-radius: 10px;
+}
+
+@layer utilities {
+  .shadow-glow {
+    box-shadow: 0 0 20px -5px rgba(59, 130, 246, 0.1);
+  }
+  
+  .glass {
+    @apply bg-white/70 backdrop-blur-md border border-white/20;
+  }
+
+  .animate-gradient {
+    background-size: 200% 200%;
+    animation: gradient-move 5s ease infinite;
+  }
+
+  @keyframes gradient-move {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+}

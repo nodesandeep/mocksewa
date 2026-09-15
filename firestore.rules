@@ -1,0 +1,81 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper: Check if user is an admin
+    function isAdmin() {
+      return request.auth != null && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // User Profiles: Users can read/write their own data
+    match /users/{userId} {
+      allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      allow write: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      
+      // Mistakes sub-collection
+      match /mistakes/{mistakeId} {
+        allow read, write: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      }
+    }
+    
+    // Public Metadata (Courses, Subjects, Quizzes, etc.)
+    match /courses/{courseId} {
+      allow read: if true; 
+      allow write: if isAdmin(); 
+    }
+    // 1. Quizzes: Metadata is public (for SEO/Listing), Questions are locked
+    match /quizzes/{quizId} {
+      allow read: if true; // Metadata (title, price, category) is public
+      allow write: if isAdmin();
+    }
+    match /subjects/{subjectId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /studyMaterials/{matId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /siteNotifications/{notifId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /leaderboard/{entryId} {
+      allow read: if true;
+      allow write: if request.auth != null; 
+    }
+    
+    // Questions: Public metadata for SEO/Generation
+    match /questions/{questionId} {
+      allow read: if true; 
+      allow write: if isAdmin();
+    }
+
+    // Question Metadata: Secure answers and hints
+    match /questionMetadata/{questionId} {
+      allow read: if (request.auth != null && 
+                     get(/databases/$(database)/documents/users/$(request.auth.uid)).data.enrolledCourses.hasAny([resource.data.courseId])) ||
+                     isAdmin();
+      allow write: if isAdmin();
+    }
+    
+    // Student Attempts: Ownership based access
+    match /studentAttempts/{attemptId} {
+      allow read: if request.auth != null && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if false; 
+    }
+    
+    // Reports
+    match /reports/{reportId} {
+      allow create: if request.auth != null;
+      allow read, write: if isAdmin();
+    }
+
+    // Global Fallback: Admin only
+    match /{document=**} {
+      allow read, write: if isAdmin();
+    }
+  }
+}
