@@ -499,7 +499,8 @@ export default function StudentHub() {
             icon="📑"
             label="Saved Bookmarks"
           />
-          <SidebarBtn
+          {/* Rankings feature temporarily disabled as requested */}
+          {/* <SidebarBtn
             active={activeTab === "leaderboard"}
             onClick={() => {
               setActiveTab("leaderboard");
@@ -507,7 +508,7 @@ export default function StudentHub() {
             }}
             icon="🏆"
             label="Rankings"
-          />
+          /> */}
           <SidebarBtn
             active={activeTab === "notices"}
             onClick={() => {
@@ -661,7 +662,7 @@ export default function StudentHub() {
                           <div className="text-2xl mb-2 group-hover:scale-110 transition-transform">⚡</div>
                           <h4 className="font-black text-sm text-white tracking-tight mb-1">Timed Mock Exam</h4>
                           <p className="text-[11px] text-blue-200/80 font-medium leading-normal mb-3">
-                            Simulate real exam pressure with negative marking & live rankings.
+                            Simulate real exam pressure with negative marking & instant analytics.
                           </p>
                           <span className="text-[10px] font-black uppercase tracking-widest text-rose-300 flex items-center gap-1">
                             Start Simulator →
@@ -1182,7 +1183,13 @@ export default function StudentHub() {
                   onStartMastery={setMasteryQuestions}
                 />
               ) : activeTab === "leaderboard" ? (
-                <Leaderboard currentUserId={user.uid} />
+                <div className="p-16 text-center bg-surface rounded-[2.5rem] border border-border space-y-4">
+                  <div className="text-4xl">🏆</div>
+                  <h3 className="text-xl font-black text-textPrimary">Rankings are Under Maintenance</h3>
+                  <p className="text-sm text-textSecondary max-w-md mx-auto">
+                    The national rankings algorithm is currently being calibrated with new weighting metrics. Check back soon!
+                  </p>
+                </div>
               ) : (
                 <NoticeBoard fullScreen />
               )}
