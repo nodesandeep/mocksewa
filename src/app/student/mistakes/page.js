@@ -8,6 +8,7 @@ import {
   AlertTriangle, CheckCircle2, XCircle, ArrowLeft, 
   RotateCcw, Sparkles, BookOpen, Brain, Check, Filter
 } from 'lucide-react';
+import FormattedQuestionText from '@/components/FormattedQuestionText';
 
 export default function MistakesNotebookPage() {
   const [loading, setLoading] = useState(true);
@@ -144,9 +145,7 @@ export default function MistakesNotebookPage() {
             </div>
 
             <div className="space-y-2">
-              <h2 className="text-lg md:text-xl font-black text-slate-900 leading-snug">
-                {mistakes[activeDrillIndex].questionText}
-              </h2>
+              <FormattedQuestionText text={mistakes[activeDrillIndex].questionText} size="base" />
             </div>
 
             <div className="space-y-3">
@@ -230,9 +229,7 @@ export default function MistakesNotebookPage() {
                   )}
                 </div>
 
-                <h3 className="font-bold text-sm md:text-base text-slate-900 leading-relaxed">
-                  {m.questionText}
-                </h3>
+                <FormattedQuestionText text={m.questionText} size="sm" />
 
                 <div className="p-4 bg-slate-50 rounded-xl space-y-2 text-xs">
                   <div className="flex items-center gap-2 font-bold text-emerald-700">

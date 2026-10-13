@@ -28,6 +28,7 @@ import {
 } from "recharts";
 
 import BrandName from "./BrandName";
+import FormattedQuestionText from "./FormattedQuestionText";
 
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -733,17 +734,15 @@ if (submitted)
               </div>
               <div className="relative z-10 space-y-4 md:space-y-6">
                 <div className="flex justify-between items-start">
-                  <div className="flex items-center gap-3">
-                    <span className="w-8 h-8 md:w-10 md:h-10 bg-slate-900 text-white rounded-lg flex items-center justify-center font-black text-sm md:text-lg italic shadow-md">
+                  <div className="flex items-start gap-3 w-full">
+                    <span className="shrink-0 w-8 h-8 md:w-10 md:h-10 bg-slate-900 text-white rounded-lg flex items-center justify-center font-black text-sm md:text-lg italic shadow-md mt-1">
                       {currentIdx + 1}
                     </span>
-                    <div>
-                      <p className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
                         Question Segment
                       </p>
-                      <h2 className="text-base md:text-xl font-bold text-slate-900 tracking-tight leading-tight font-nepali">
-                        {currentQ?.questionText}
-                      </h2>
+                      <FormattedQuestionText text={currentQ?.questionText} size="base" />
                     </div>
                   </div>
                 </div>
@@ -1208,9 +1207,7 @@ function SolutionCard({ idx, q, selectedIdx, saved, onSave }) {
               {isCorrect ? "Precision Achievement ✓" : isSkipped ? "Logic Segment Skipped" : "Logical Discrepancy Found"}
             </div>
           </div>
-          <h2 className="text-2xl md:text-4xl font-black text-slate-900 tracking-tight leading-tight font-nepali">
-            {q.questionText}
-          </h2>
+          <FormattedQuestionText text={q.questionText} size="lg" />
         </div>
         <button
           onClick={() => onSave(q.id)}

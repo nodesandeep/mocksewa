@@ -67,3 +67,6 @@ migration_output.txt
 !eslint.config.mjs
 !postcss.config.mjs
 
+
+.vercel
+.env*

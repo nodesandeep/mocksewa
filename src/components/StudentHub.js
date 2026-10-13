@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import Link from "next/link";
 import { Loader2, RefreshCw, BookOpen, GraduationCap, Trophy, History, Settings, LogOut, ChevronRight, Star, AlertCircle, Clock, Trash2, Filter, CheckCircle2 } from "lucide-react";
 import TrialCourseCard from "./TrialCourseCard";
+import FormattedQuestionText from "./FormattedQuestionText";
 
 import { db, auth } from "../utils/firebase";
 
@@ -1682,9 +1683,7 @@ function MistakeBank({
                       </button>
                     )}
                   </div>
-                  <h4 className="text-xl font-bold text-textPrimary leading-tight font-nepali">
-                    {m.questionText}
-                  </h4>
+                  <FormattedQuestionText text={m.questionText} size="base" />
 
                   <div className="grid grid-cols-1 gap-3 pt-2">
                     <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100">

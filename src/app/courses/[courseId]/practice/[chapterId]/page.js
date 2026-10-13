@@ -9,6 +9,7 @@ import {
   CheckCircle2, XCircle, ArrowRight, ArrowLeft, 
   HelpCircle, Sparkles, BookOpen, RefreshCw, Award, AlertCircle
 } from 'lucide-react';
+import FormattedQuestionText from '@/components/FormattedQuestionText';
 
 export default function ChapterPracticePage() {
   const { courseId, chapterId } = useParams();
@@ -189,9 +190,7 @@ export default function ChapterPracticePage() {
               <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">
                 Question {currentIndex + 1}
               </div>
-              <h2 className="text-xl md:text-2xl font-black text-slate-900 leading-snug">
-                {currentQ.questionText}
-              </h2>
+              <FormattedQuestionText text={currentQ.questionText} size="lg" />
             </div>
 
             {/* Options */}
