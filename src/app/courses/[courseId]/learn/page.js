@@ -102,7 +102,7 @@ export default function GuidedMasteryPage() {
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           
           {/* Left Brand & Return */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
             <Link 
               href="/student"
               className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 rounded-xl transition-all flex items-center justify-center active:scale-95"
@@ -110,7 +110,7 @@ export default function GuidedMasteryPage() {
             >
               <ArrowLeft className="w-4 h-4" />
             </Link>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <Logo className="w-7 h-7" />
               <div className="hidden sm:block">
                 <BrandName />
@@ -122,7 +122,7 @@ export default function GuidedMasteryPage() {
           </div>
 
           {/* Right Action Pills & Progress */}
-          <div className="flex items-center gap-2 md:gap-3">
+          <div className="flex items-center gap-2 md:gap-3 shrink-0">
             <Link
               href={`/courses/${courseId}/cheat-sheet`}
               className="px-3 py-1.5 bg-amber-50/80 hover:bg-amber-100 text-amber-900 rounded-xl text-xs font-bold border border-amber-200/80 transition-all flex items-center gap-1.5 shadow-2xs hover:scale-[1.02] active:scale-95"
@@ -188,8 +188,8 @@ export default function GuidedMasteryPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
           
-          {/* Left Column: Duolingo-style Sequential Roadmap Tree (4 cols) */}
-          <div className={`lg:col-span-4 space-y-4 ${mobileTab === 'roadmap' ? 'block' : 'hidden lg:block'}`}>
+          {/* Left Column: Duolingo-style Sequential Roadmap Tree (4 cols, Sticky on Desktop) */}
+          <div className={`lg:col-span-4 lg:sticky lg:top-[80px] lg:max-h-[calc(100vh-100px)] lg:overflow-y-auto space-y-4 pr-1 ${mobileTab === 'roadmap' ? 'block' : 'hidden lg:block'}`}>
             
             {/* Header Card for Left Column */}
             <div className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-3">
