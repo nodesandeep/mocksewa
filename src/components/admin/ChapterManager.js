@@ -527,16 +527,16 @@ export default function ChapterManager() {
           {chapters.length > 1 && (
             <button
               onClick={handleAutoSequenceAll}
-              className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
-              title="Fix sequential numbering (1, 2, 3...)"
+              className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 rounded-xl text-xs font-bold border border-slate-200/90 shadow-2xs flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer whitespace-nowrap"
+              title="Renumber all chapters sequentially (1, 2, 3...) based on current order"
             >
-              <ListOrdered className="w-3.5 h-3.5 text-slate-600" /> Auto-Sequence
+              <ListOrdered className="w-3.5 h-3.5 text-blue-600" /> Auto-Sequence
             </button>
           )}
 
           <button
             onClick={handleOpenAdd}
-            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-blue-500/20 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+            className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-blue-500/25 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
           >
             <Plus className="w-4 h-4" /> Add Chapter
           </button>
@@ -570,7 +570,7 @@ export default function ChapterManager() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-slate-600">
-              <thead className="bg-slate-50 border-b border-slate-100 font-black text-slate-400 uppercase text-[10px] tracking-wider">
+              <thead className="bg-slate-50/80 border-b border-slate-100 font-black text-slate-400 uppercase text-[10px] tracking-wider">
                 <tr>
                   <th className="py-3 px-4">Order</th>
                   <th className="py-3 px-4">Chapter Title</th>
@@ -584,16 +584,19 @@ export default function ChapterManager() {
                 {chapters.map((c, idx) => (
                   <tr key={c.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="py-3.5 px-4 font-black text-slate-900">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-2">
                         <div className="flex flex-col gap-0.5">
                           <button
                             type="button"
                             disabled={idx === 0}
                             onClick={() => handleMoveOrder(idx, 'up')}
-                            className={`p-1 rounded hover:bg-slate-200 transition-colors ${
-                              idx === 0 ? 'text-slate-300 cursor-not-allowed' : 'text-slate-600 hover:text-blue-600 cursor-pointer'
+                            className={`p-1 rounded-md border transition-all ${
+                              idx === 0 
+                                ? 'text-slate-300 border-transparent cursor-not-allowed' 
+                                : 'text-slate-600 border-slate-200/80 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 cursor-pointer active:scale-90 shadow-2xs'
                             }`}
-                            title="Move Chapter Up"
+                            title="Move Chapter Up in sequence"
+                            aria-label="Move Chapter Up"
                           >
                             <ChevronUp className="w-3.5 h-3.5" />
                           </button>
@@ -601,15 +604,18 @@ export default function ChapterManager() {
                             type="button"
                             disabled={idx === chapters.length - 1}
                             onClick={() => handleMoveOrder(idx, 'down')}
-                            className={`p-1 rounded hover:bg-slate-200 transition-colors ${
-                              idx === chapters.length - 1 ? 'text-slate-300 cursor-not-allowed' : 'text-slate-600 hover:text-blue-600 cursor-pointer'
+                            className={`p-1 rounded-md border transition-all ${
+                              idx === chapters.length - 1 
+                                ? 'text-slate-300 border-transparent cursor-not-allowed' 
+                                : 'text-slate-600 border-slate-200/80 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 cursor-pointer active:scale-90 shadow-2xs'
                             }`}
-                            title="Move Chapter Down"
+                            title="Move Chapter Down in sequence"
+                            aria-label="Move Chapter Down"
                           >
                             <ChevronDown className="w-3.5 h-3.5" />
                           </button>
                         </div>
-                        <span className="w-7 h-7 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-black text-xs border border-blue-100 shadow-2xs">
+                        <span className="w-7 h-7 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-black text-xs border border-blue-200/80 shadow-2xs">
                           {c.sequenceOrder}
                         </span>
                       </div>
@@ -618,45 +624,46 @@ export default function ChapterManager() {
                       {c.title}
                     </td>
                     <td className="py-3.5 px-4">
-                      <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 font-bold rounded-md border border-emerald-200">
+                      <span className="px-2.5 py-1 bg-emerald-50 text-emerald-800 font-bold rounded-lg border border-emerald-200/80 shadow-2xs">
                         {c.passingThreshold || 60}%
                       </span>
                     </td>
-                    <td className="py-3.5 px-4 text-slate-500">
+                    <td className="py-3.5 px-4 text-slate-500 font-semibold">
                       {c.estimatedReadMinutes || 8} mins
                     </td>
                     <td className="py-3.5 px-4">
                       {c.quizTitle ? (
-                        <div className="space-y-1">
+                        <div className="space-y-1.5">
                           <div className="font-bold text-slate-800 flex items-center gap-1.5">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                            <span className="truncate max-w-[180px]">{c.quizTitle}</span>
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                            <span className="truncate max-w-[200px]">{c.quizTitle}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             {c.questionCount > 0 ? (
-                              <span className="text-[10px] font-black px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-md border border-emerald-200">
+                              <span className="inline-flex items-center gap-1 text-[10px] font-black px-2.5 py-0.5 bg-emerald-50 text-emerald-800 rounded-full border border-emerald-200/80 shadow-2xs">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                                 {c.questionCount} Questions Ready
                               </span>
                             ) : (
-                              <span className="text-[10px] font-black px-2 py-0.5 bg-amber-50 text-amber-700 rounded-md border border-amber-200 flex items-center gap-1">
+                              <span className="inline-flex items-center gap-1 text-[10px] font-black px-2.5 py-0.5 bg-amber-50 text-amber-800 rounded-full border border-amber-200/80 shadow-2xs">
                                 <AlertTriangle className="w-3 h-3 text-amber-600" /> 0 Questions (Empty)
                               </span>
                             )}
                             <button
                               onClick={() => handleOpenImport(c)}
                               className="text-[10px] font-bold text-blue-600 hover:text-blue-800 underline cursor-pointer"
-                              title="Import CSV Questions"
+                              title="Import CSV Questions into this quiz"
                             >
                               + Import CSV
                             </button>
                           </div>
                         </div>
                       ) : (
-                        <div className="space-y-1">
-                          <span className="text-slate-400 italic text-[11px] block">No quiz linked</span>
+                        <div className="space-y-1.5">
+                          <span className="text-slate-400 text-[11px] font-medium block">No quiz linked</span>
                           <button
                             onClick={() => handleQuickCreateQuiz(c)}
-                            className="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-[10px] font-bold border border-blue-200 transition-colors flex items-center gap-1 cursor-pointer"
+                            className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-[10px] font-bold border border-blue-200 transition-all flex items-center gap-1 cursor-pointer active:scale-95 shadow-2xs"
                             title="1-Click Create & Link Quiz"
                           >
                             <Plus className="w-3 h-3" /> Quick-Create Quiz
@@ -665,24 +672,24 @@ export default function ChapterManager() {
                       )}
                     </td>
                     <td className="py-3.5 px-4 text-right">
-                      <div className="inline-flex items-center gap-2">
+                      <div className="inline-flex items-center gap-1.5">
                         <button
                           onClick={() => handleOpenImport(c)}
-                          className="p-1.5 hover:bg-emerald-50 text-emerald-600 rounded-lg transition-colors cursor-pointer"
+                          className="p-1.5 hover:bg-emerald-50 text-emerald-700 hover:text-emerald-800 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-emerald-200"
                           title="Import Questions CSV to Chapter Quiz"
                         >
                           <Upload className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleOpenEdit(c)}
-                          className="p-1.5 hover:bg-slate-100 text-blue-600 rounded-lg transition-colors cursor-pointer"
+                          className="p-1.5 hover:bg-blue-50 text-blue-700 hover:text-blue-800 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-blue-200"
                           title="Edit Chapter Notes"
                         >
                           <Edit3 className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(c.id)}
-                          className="p-1.5 hover:bg-red-50 text-red-500 rounded-lg transition-colors cursor-pointer"
+                          className="p-1.5 hover:bg-red-50 text-red-600 hover:text-red-700 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-red-200"
                           title="Delete Chapter"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -819,44 +826,49 @@ export default function ChapterManager() {
 
                 {editorTab === 'write' ? (
                   <div className="space-y-2">
-                    <div className="flex flex-wrap items-center gap-1.5 p-2 bg-slate-100 rounded-xl border border-slate-200">
-                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 mr-1 flex items-center gap-1">
-                        <Sparkles className="w-3 h-3 text-amber-500" /> Insert Template:
+                    <div className="flex flex-wrap items-center gap-2 p-2.5 bg-slate-100/90 rounded-2xl border border-slate-200 shadow-2xs">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 mr-0.5 flex items-center gap-1.5 pl-1">
+                        <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Insert Template:
                       </span>
                       <button
                         type="button"
                         onClick={() => insertTemplate('loksewa')}
-                        className="px-2.5 py-1 bg-white hover:bg-blue-50 text-slate-700 hover:text-blue-700 font-bold rounded-lg border border-slate-200 shadow-2xs transition-all flex items-center gap-1 cursor-pointer text-[11px]"
+                        className="px-3 py-1.5 bg-white hover:bg-blue-50 text-slate-700 hover:text-blue-700 font-bold rounded-xl border border-slate-200/90 hover:border-blue-300 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer text-xs active:scale-95"
+                        title="Insert Constitutional & Statutory provisions comparison table"
                       >
-                        <FileText className="w-3 h-3 text-blue-600" /> + Loksewa Section
+                        <FileText className="w-3.5 h-3.5 text-blue-600" /> + Loksewa Section
                       </button>
                       <button
                         type="button"
                         onClick={() => insertTemplate('formula')}
-                        className="px-2.5 py-1 bg-white hover:bg-purple-50 text-slate-700 hover:text-purple-700 font-bold rounded-lg border border-slate-200 shadow-2xs transition-all flex items-center gap-1 cursor-pointer text-[11px]"
+                        className="px-3 py-1.5 bg-white hover:bg-purple-50 text-slate-700 hover:text-purple-700 font-bold rounded-xl border border-slate-200/90 hover:border-purple-300 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer text-xs active:scale-95"
+                        title="Insert LaTeX mathematical and physical formulas"
                       >
-                        <Code className="w-3 h-3 text-purple-600" /> + KaTeX Formula
+                        <Code className="w-3.5 h-3.5 text-purple-600" /> + KaTeX Formula
                       </button>
                       <button
                         type="button"
                         onClick={() => insertTemplate('match')}
-                        className="px-2.5 py-1 bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 font-bold rounded-lg border border-slate-200 shadow-2xs transition-all flex items-center gap-1 cursor-pointer text-[11px]"
+                        className="px-3 py-1.5 bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 font-bold rounded-xl border border-slate-200/90 hover:border-emerald-300 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer text-xs active:scale-95"
+                        title="Insert Loksewa Match-the-Following Group I and Group II format"
                       >
-                        <Layers className="w-3 h-3 text-emerald-600" /> + Match Pairs
+                        <Layers className="w-3.5 h-3.5 text-emerald-600" /> + Match Pairs
                       </button>
                       <button
                         type="button"
                         onClick={() => insertTemplate('callout')}
-                        className="px-2.5 py-1 bg-white hover:bg-amber-50 text-slate-700 hover:text-amber-700 font-bold rounded-lg border border-slate-200 shadow-2xs transition-all flex items-center gap-1 cursor-pointer text-[11px]"
+                        className="px-3 py-1.5 bg-white hover:bg-amber-50 text-slate-700 hover:text-amber-800 font-bold rounded-xl border border-slate-200/90 hover:border-amber-300 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer text-xs active:scale-95"
+                        title="Insert High-Yield past exam trend and trap callout box"
                       >
-                        <AlertTriangle className="w-3 h-3 text-amber-600" /> + High-Yield Tip
+                        <AlertTriangle className="w-3.5 h-3.5 text-amber-600" /> + High-Yield Tip
                       </button>
                       <button
                         type="button"
                         onClick={() => insertTemplate('summary')}
-                        className="px-2.5 py-1 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 font-bold rounded-lg border border-slate-200 shadow-2xs transition-all flex items-center gap-1 cursor-pointer text-[11px]"
+                        className="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 font-bold rounded-xl border border-slate-200/90 hover:border-slate-300 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer text-xs active:scale-95"
+                        title="Insert Rapid-Recall checklist key points"
                       >
-                        <CheckCircle2 className="w-3 h-3 text-slate-600" /> + Key Points
+                        <CheckCircle2 className="w-3.5 h-3.5 text-slate-600" /> + Key Points
                       </button>
                     </div>
 
