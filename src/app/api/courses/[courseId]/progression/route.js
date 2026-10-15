@@ -39,7 +39,13 @@ export async function GET(request, { params }) {
         isPassed: false,
         readingMaterial: idx === 0 ? chap.readingMaterial : null, // Prevent data leak of locked chapters
       }));
-      return NextResponse.json({ chapters: guestChapters, userProgress: null });
+      return NextResponse.json({
+        success: true,
+        chapters: guestChapters,
+        totalChapters: chapters.length,
+        passedChapters: 0,
+        userProgress: null
+      });
     }
 
     // 2. Fetch user's progression for this course

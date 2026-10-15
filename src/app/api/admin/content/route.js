@@ -48,12 +48,21 @@ export async function GET(request) {
     if (type === 'chapters') {
       if (courseId) {
         const res = await turso.execute({ 
-          sql: 'SELECT c.*, q.title as quizTitle FROM chapters c LEFT JOIN quizzes q ON q.chapterId = c.id WHERE c.courseId = ? ORDER BY c.sequenceOrder ASC', 
+          sql: `SELECT c.*, q.id as linkedQuizId, q.title as quizTitle, 
+                (SELECT COUNT(*) FROM questions WHERE quizId = q.id) as questionCount 
+                FROM chapters c 
+                LEFT JOIN quizzes q ON q.chapterId = c.id 
+                WHERE c.courseId = ? 
+                ORDER BY c.sequenceOrder ASC`, 
           args: [courseId] 
         });
         return NextResponse.json(res.rows);
       }
-      const res = await turso.execute('SELECT c.*, q.title as quizTitle FROM chapters c LEFT JOIN quizzes q ON q.chapterId = c.id ORDER BY c.createdAt DESC');
+      const res = await turso.execute(`SELECT c.*, q.id as linkedQuizId, q.title as quizTitle, 
+            (SELECT COUNT(*) FROM questions WHERE quizId = q.id) as questionCount 
+            FROM chapters c 
+            LEFT JOIN quizzes q ON q.chapterId = c.id 
+            ORDER BY c.createdAt DESC`);
       return NextResponse.json(res.rows);
     }
     if (type === 'questions') {
@@ -239,6 +248,19 @@ export async function POST(request) {
 
     // ── CHAPTER (Guided Mastery & Notes) ──────────────────
     if (type === 'chapter') {
+      if (action === 'reorder') {
+        const { orders } = data; // [{ id, sequenceOrder }, ...]
+        if (Array.isArray(orders) && orders.length > 0) {
+          const statements = orders.map(o => ({
+            sql: 'UPDATE chapters SET sequenceOrder = ? WHERE id = ?',
+            args: [o.sequenceOrder, o.id]
+          }));
+          await turso.batch(statements);
+          return NextResponse.json({ success: true });
+        }
+        return NextResponse.json({ error: 'Invalid orders array' }, { status: 400 });
+      }
+
       if (action === 'save') {
         const id = data.id || `chap_${Date.now()}`;
         await turso.execute({
@@ -267,9 +289,14 @@ export async function POST(request) {
 
         // If quizId was chosen to link to this chapter, update quiz
         if (data.quizId) {
+          await turso.batch([
+            { sql: 'UPDATE quizzes SET chapterId = NULL WHERE chapterId = ? AND id != ?', args: [id, data.quizId] },
+            { sql: 'UPDATE quizzes SET chapterId = ? WHERE id = ?', args: [id, data.quizId] }
+          ]);
+        } else if (data.unlinkQuiz) {
           await turso.execute({
-            sql: 'UPDATE quizzes SET chapterId = ? WHERE id = ?',
-            args: [id, data.quizId]
+            sql: 'UPDATE quizzes SET chapterId = NULL WHERE chapterId = ?',
+            args: [id]
           });
         }
 

@@ -1,11 +1,14 @@
 'use client';
-import React from 'react';
+import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
-import { BookOpen, Lock, ArrowRight, Award, Clock, Highlighter, Bookmark, Check } from 'lucide-react';
+import { 
+  BookOpen, Lock, ArrowRight, ArrowLeft, ChevronLeft, ChevronRight, 
+  Award, Clock, Highlighter, Bookmark, Check, Sparkles 
+} from 'lucide-react';
 import { auth } from '@/utils/firebase';
 
 export default function MarkdownNotesViewer({
@@ -18,7 +21,10 @@ export default function MarkdownNotesViewer({
   hasQuiz = false,
   isUnlocked = true,
   isPassed = false,
-  onStartQuiz
+  onStartQuiz,
+  prevChapter = null,
+  nextChapter = null,
+  onSelectChapter = null
 }) {
   const [selectedText, setSelectedText] = useState('');
   const [highlightNotice, setHighlightNotice] = useState('');
@@ -165,20 +171,58 @@ export default function MarkdownNotesViewer({
         </ReactMarkdown>
       </div>
 
-      {/* Footer Call-to-Action */}
-      <div className="p-6 md:p-8 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="text-xs text-slate-500 font-medium">
-          Mastery Requirement: Score at least <strong className="text-slate-900">{passingThreshold}%</strong> on the chapter quiz to unlock the next chapter.
+      {/* Footer Call-to-Action & Sequential Chapter Navigation */}
+      <div className="p-6 md:p-8 bg-slate-50 border-t border-slate-200 space-y-4">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="text-xs text-slate-500 font-medium text-center sm:text-left">
+            Mastery Requirement: Score at least <strong className="text-slate-900">{passingThreshold}%</strong> on the chapter quiz to unlock the next chapter.
+          </div>
+
+          {hasQuiz && onStartQuiz && (
+            <button
+              onClick={onStartQuiz}
+              className="w-full sm:w-auto px-8 py-3.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black rounded-xl shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 transition-all text-sm uppercase tracking-wider cursor-pointer"
+            >
+              <span>Take Chapter Test</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
-        {hasQuiz && onStartQuiz && (
-          <button
-            onClick={onStartQuiz}
-            className="w-full sm:w-auto px-8 py-3.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black rounded-xl shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 transition-all text-sm uppercase tracking-wider cursor-pointer"
-          >
-            <span>Take Chapter Test</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
+        {/* Previous & Next Chapter Switcher */}
+        {(prevChapter || nextChapter) && (
+          <div className="pt-4 border-t border-slate-200/80 flex items-center justify-between gap-3 text-xs">
+            {prevChapter ? (
+              <button
+                onClick={() => onSelectChapter && onSelectChapter(prevChapter)}
+                className="px-4 py-2 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl font-bold text-slate-700 flex items-center gap-1.5 transition-all cursor-pointer max-w-[48%] truncate"
+                title={`Previous: ${prevChapter.title}`}
+              >
+                <ChevronLeft className="w-4 h-4 shrink-0 text-slate-400" />
+                <span className="truncate">Prev: {prevChapter.title}</span>
+              </button>
+            ) : <div />}
+
+            {nextChapter && (
+              <button
+                onClick={() => onSelectChapter && onSelectChapter(nextChapter)}
+                disabled={nextChapter.status === 'LOCKED'}
+                className={`px-4 py-2 rounded-xl font-bold flex items-center gap-1.5 transition-all cursor-pointer max-w-[48%] truncate ${
+                  nextChapter.status === 'LOCKED'
+                    ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                    : 'bg-white hover:bg-blue-50 text-blue-700 border border-blue-200 shadow-sm'
+                }`}
+                title={nextChapter.status === 'LOCKED' ? 'Complete chapter test to unlock' : `Next: ${nextChapter.title}`}
+              >
+                <span className="truncate">Next: {nextChapter.title}</span>
+                {nextChapter.status === 'LOCKED' ? (
+                  <Lock className="w-3.5 h-3.5 shrink-0 text-slate-400" />
+                ) : (
+                  <ChevronRight className="w-4 h-4 shrink-0 text-blue-600" />
+                )}
+              </button>
+            )}
+          </div>
         )}
       </div>
     </div>

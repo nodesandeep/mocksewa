@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { auth } from '@/utils/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 import MarkdownNotesViewer from '@/components/MarkdownNotesViewer';
 import Logo from '@/components/Logo';
 import BrandName from '@/components/BrandName';
@@ -23,12 +24,12 @@ export default function GuidedMasteryPage() {
   const [stats, setStats] = useState({ total: 0, passed: 0 });
 
   useEffect(() => {
-    async function fetchProgression() {
+    async function loadProgression(user) {
       try {
         setLoading(true);
         let token = '';
-        if (auth.currentUser) {
-          token = await auth.currentUser.getIdToken();
+        if (user) {
+          token = await user.getIdToken();
         }
 
         const res = await fetch(`/api/courses/${courseId}/progression`, {
@@ -38,11 +39,15 @@ export default function GuidedMasteryPage() {
 
         if (data.success && data.chapters) {
           setChapters(data.chapters);
-          setStats({ total: data.totalChapters, passed: data.passedChapters });
+          setStats({ total: data.totalChapters || data.chapters.length, passed: data.passedChapters || 0 });
           
-          // Select first unlocked chapter or first chapter
-          const current = data.chapters.find(c => c.status === 'READING' || c.status === 'TEST_UNLOCKED') || data.chapters[0];
-          setSelectedChapter(current || null);
+          setSelectedChapter(prev => {
+            if (prev) {
+              const stillExists = data.chapters.find(c => c.id === prev.id);
+              if (stillExists) return stillExists;
+            }
+            return data.chapters.find(c => c.status === 'READING' || c.status === 'TEST_UNLOCKED') || data.chapters[0] || null;
+          });
         }
       } catch (err) {
         console.error("Failed to load progression:", err);
@@ -51,7 +56,11 @@ export default function GuidedMasteryPage() {
       }
     }
 
-    fetchProgression();
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      loadProgression(user);
+    });
+
+    return () => unsubscribe();
   }, [courseId]);
 
   const handleStartQuiz = (chapterId) => {
@@ -69,6 +78,10 @@ export default function GuidedMasteryPage() {
   }
 
   const completionRate = stats.total > 0 ? Math.round((stats.passed / stats.total) * 100) : 0;
+  
+  const currentChapterIndex = chapters.findIndex(c => c.id === selectedChapter?.id);
+  const prevChapter = currentChapterIndex > 0 ? chapters[currentChapterIndex - 1] : null;
+  const nextChapter = currentChapterIndex >= 0 && currentChapterIndex < chapters.length - 1 ? chapters[currentChapterIndex + 1] : null;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
@@ -241,11 +254,38 @@ export default function GuidedMasteryPage() {
                 isUnlocked={selectedChapter.isUnlocked}
                 isPassed={selectedChapter.isPassed}
                 onStartQuiz={() => handleStartQuiz(selectedChapter.id)}
+                prevChapter={prevChapter}
+                nextChapter={nextChapter}
+                onSelectChapter={setSelectedChapter}
               />
+            ) : chapters.length === 0 ? (
+              <div className="p-12 md:p-16 text-center bg-white rounded-3xl border border-slate-200 shadow-sm space-y-4">
+                <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
+                  <BookOpen className="w-8 h-8" />
+                </div>
+                <h3 className="text-xl font-black text-slate-900">Curriculum Roadmap In Assembly</h3>
+                <p className="text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
+                  Our faculty is currently compiling chapter-wise high-yield notes and question banks for this course. In the meantime, you can dive straight into complete timed mock exams!
+                </p>
+                <div className="pt-2 flex flex-wrap justify-center gap-3">
+                  <Link
+                    href={`/exams/${courseId}`}
+                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-blue-500/20 transition-all hover:scale-105"
+                  >
+                    Take Full Mock Exam
+                  </Link>
+                  <Link
+                    href="/student"
+                    className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs uppercase tracking-wider rounded-xl transition-all"
+                  >
+                    Back to Dashboard
+                  </Link>
+                </div>
+              </div>
             ) : (
-              <div className="p-16 text-center bg-white rounded-3xl border border-slate-200">
+              <div className="p-16 text-center bg-white rounded-3xl border border-slate-200 shadow-sm">
                 <BookOpen className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                <p className="text-slate-500 font-bold">Select a chapter from the left to start reading.</p>
+                <p className="text-slate-600 font-bold">Select a chapter from the left to start reading.</p>
               </div>
             )}
           </div>

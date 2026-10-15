@@ -5,7 +5,8 @@ import MarkdownNotesViewer from '@/components/MarkdownNotesViewer';
 import Papa from 'papaparse';
 import { 
   BookOpen, Plus, Trash2, Edit3, Save, X, 
-  CheckCircle2, Compass, Layers, Eye, Code, HelpCircle, Upload, FileText, ExternalLink
+  CheckCircle2, Compass, Layers, Eye, Code, HelpCircle, Upload, FileText, ExternalLink,
+  ChevronUp, ChevronDown, ListOrdered, Sparkles, AlertTriangle
 } from 'lucide-react';
 
 export default function ChapterManager() {
@@ -58,39 +59,39 @@ export default function ChapterManager() {
     loadCourses();
   }, []);
 
+  const refreshContent = async (courseId = selectedCourseId) => {
+    if (!courseId) return;
+    setLoading(true);
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      const [chapRes, quizRes] = await Promise.all([
+        fetch(`/api/admin/content?type=chapters&courseId=${courseId}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        }),
+        fetch(`/api/admin/content?type=quizzes&courseId=${courseId}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        })
+      ]);
+
+      if (chapRes.ok) {
+        const chapData = await chapRes.json();
+        setChapters(chapData);
+      }
+      if (quizRes.ok) {
+        const quizData = await quizRes.json();
+        setQuizzes(quizData);
+      }
+    } catch (err) {
+      console.error('Error fetching course chapters:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Load Chapters & Quizzes when Course changes
   useEffect(() => {
     if (!selectedCourseId) return;
-
-    async function loadCourseContent() {
-      setLoading(true);
-      try {
-        const token = await auth.currentUser?.getIdToken();
-        const [chapRes, quizRes] = await Promise.all([
-          fetch(`/api/admin/content?type=chapters&courseId=${selectedCourseId}`, {
-            headers: token ? { Authorization: `Bearer ${token}` } : {}
-          }),
-          fetch(`/api/admin/content?type=quizzes&courseId=${selectedCourseId}`, {
-            headers: token ? { Authorization: `Bearer ${token}` } : {}
-          })
-        ]);
-
-        if (chapRes.ok) {
-          const chapData = await chapRes.json();
-          setChapters(chapData);
-        }
-        if (quizRes.ok) {
-          const quizData = await quizRes.json();
-          setQuizzes(quizData);
-        }
-      } catch (err) {
-        console.error('Error fetching course chapters:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadCourseContent();
+    refreshContent(selectedCourseId);
   }, [selectedCourseId]);
 
   const handleOpenAdd = () => {
@@ -117,12 +118,149 @@ export default function ChapterManager() {
       passingThreshold: chap.passingThreshold || 60,
       estimatedReadMinutes: chap.estimatedReadMinutes || 8,
       quizQuestionCount: chap.quizQuestionCount || 15,
-      quizId: chap.quizId || '',
+      quizId: chap.linkedQuizId || chap.quizId || '',
       readingMaterial: chap.readingMaterial || '',
       summaryPoints: chap.summaryPoints || ''
     });
     setEditorTab('write');
     setIsEditing(true);
+  };
+
+  const handleMoveOrder = async (index, direction) => {
+    if (direction === 'up' && index === 0) return;
+    if (direction === 'down' && index === chapters.length - 1) return;
+
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    const currentChapter = chapters[index];
+    const targetChapter = chapters[targetIndex];
+
+    const currentOrder = currentChapter.sequenceOrder;
+    const targetOrder = targetChapter.sequenceOrder;
+
+    const newCurrentOrder = targetOrder === currentOrder 
+      ? (direction === 'up' ? currentOrder - 1 : currentOrder + 1) 
+      : targetOrder;
+    const newTargetOrder = currentOrder;
+
+    const newChapters = [...chapters];
+    newChapters[index] = { ...currentChapter, sequenceOrder: newCurrentOrder };
+    newChapters[targetIndex] = { ...targetChapter, sequenceOrder: newTargetOrder };
+    newChapters.sort((a, b) => a.sequenceOrder - b.sequenceOrder);
+    setChapters(newChapters);
+
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      await fetch('/api/admin/content', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          type: 'chapter',
+          action: 'reorder',
+          data: {
+            orders: [
+              { id: currentChapter.id, sequenceOrder: newCurrentOrder },
+              { id: targetChapter.id, sequenceOrder: newTargetOrder }
+            ]
+          }
+        })
+      });
+      refreshContent();
+    } catch (err) {
+      console.error('Error reordering chapters:', err);
+      refreshContent();
+    }
+  };
+
+  const handleAutoSequenceAll = async () => {
+    if (!confirm(`Re-sequence all ${chapters.length} chapters sequentially (1, 2, 3...)?`)) return;
+    const updatedOrders = chapters.map((c, i) => ({ id: c.id, sequenceOrder: i + 1 }));
+    setChapters(prev => prev.map((c, i) => ({ ...c, sequenceOrder: i + 1 })));
+
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      await fetch('/api/admin/content', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          type: 'chapter',
+          action: 'reorder',
+          data: { orders: updatedOrders }
+        })
+      });
+      refreshContent();
+    } catch (err) {
+      console.error('Error auto-sequencing:', err);
+    }
+  };
+
+  const handleQuickCreateQuiz = async (chap) => {
+    const quizTitle = `${chap.title} - Chapter Practice`;
+    if (!confirm(`Create a dedicated practice quiz for:\n"${chap.title}"\nand link it automatically?`)) return;
+
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch('/api/admin/content', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          type: 'quiz',
+          action: 'save',
+          data: {
+            title: quizTitle,
+            courseId: selectedCourseId,
+            chapterId: chap.id,
+            quizType: 'CHAPTER_TEST',
+            timeLimit: 20,
+            enabled: true
+          }
+        })
+      });
+
+      if (res.ok) {
+        refreshContent();
+      } else {
+        alert('Failed to auto-create quiz.');
+      }
+    } catch (err) {
+      console.error('Failed to quick create quiz:', err);
+      alert('Error: ' + err.message);
+    }
+  };
+
+  const insertTemplate = (templateType) => {
+    let snippet = '';
+    switch (templateType) {
+      case 'loksewa':
+        snippet = `\n\n## 📌 High-Yield Loksewa Concepts\n\n> 💡 **Core Constitutional / Statutory Provision:**\n> Important clause and year to memorize for objective exam questions.\n\n### ⚖️ Provisions & Authorities Table:\n| Subject / Cluster | Authority | Constitutional Basis | Validity / Term |\n|---|---|---|---|\n| Public Service Commission | President of Nepal | Article 242 | 6 Years |\n| Election Commission | Constitutional Council | Article 245 | 6 Years |\n`;
+        break;
+      case 'formula':
+        snippet = `\n\n### 📐 Essential Mathematical / Physical Formula\n\n$$P = \\frac{F}{A} \\quad \\text{where } P = \\text{Pressure } (\\text{N/m}^2), \\, F = \\text{Force } (\\text{N}), \\, A = \\text{Area } (\\text{m}^2)$$\n\n$$\\text{Work Done} (W) = F \\cdot d \\cdot \\cos(\\theta)$$\n`;
+        break;
+      case 'match':
+        snippet = `\n\n### 🔗 Match-the-Following Pairs (Standard Loksewa Format)\n\n**Match Group I with Group II:**\n\n**Group I:**\n- a) Mount Everest Elevation\n- b) Kanchenjunga Elevation\n- c) Lhotse Elevation\n\n**Group II:**\n- 1) 8,848.86 m\n- 2) 8,586 m\n- 3) 8,516 m\n`;
+        break;
+      case 'callout':
+        snippet = `\n\n> 🎯 **Past Exam Trend & Trap:**\n> *Repeated in 2079 & 2081 exams.* Pay special attention to exception clauses and date of enactment.\n`;
+        break;
+      case 'summary':
+        snippet = `\n\n### ⚡ Rapid-Recall Key Takeaways\n- [ ] **Point 1:** Core definitions and constitutional scope.\n- [ ] **Point 2:** Disciplinary and administrative actions under regulations.\n- [ ] **Point 3:** Mandatory quotas and reservations percentages.\n`;
+        break;
+      default:
+        break;
+    }
+    setFormData(prev => ({
+      ...prev,
+      readingMaterial: (prev.readingMaterial ? prev.readingMaterial + snippet : snippet.trimStart())
+    }));
   };
 
   const handleSave = async (e) => {
@@ -386,6 +524,16 @@ export default function ChapterManager() {
             </div>
           )}
 
+          {chapters.length > 1 && (
+            <button
+              onClick={handleAutoSequenceAll}
+              className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
+              title="Fix sequential numbering (1, 2, 3...)"
+            >
+              <ListOrdered className="w-3.5 h-3.5 text-slate-600" /> Auto-Sequence
+            </button>
+          )}
+
           <button
             onClick={handleOpenAdd}
             className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-blue-500/20 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
@@ -402,7 +550,7 @@ export default function ChapterManager() {
             <Layers className="w-4 h-4 text-blue-600" /> Chapters on Path ({chapters.length})
           </h3>
           <span className="text-xs text-slate-400 font-medium">
-            Sequential Lock: Pass required to unlock next
+            Sequential Lock: Pass required to unlock next chapter
           </span>
         </div>
 
@@ -428,17 +576,43 @@ export default function ChapterManager() {
                   <th className="py-3 px-4">Chapter Title</th>
                   <th className="py-3 px-4">Threshold</th>
                   <th className="py-3 px-4">Read Time</th>
-                  <th className="py-3 px-4">Linked Quiz</th>
+                  <th className="py-3 px-4">Linked Quiz & Questions</th>
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
-                {chapters.map((c) => (
+                {chapters.map((c, idx) => (
                   <tr key={c.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="py-3.5 px-4 font-black text-slate-900">
-                      <span className="w-6 h-6 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center font-bold text-xs">
-                        {c.sequenceOrder}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <div className="flex flex-col gap-0.5">
+                          <button
+                            type="button"
+                            disabled={idx === 0}
+                            onClick={() => handleMoveOrder(idx, 'up')}
+                            className={`p-1 rounded hover:bg-slate-200 transition-colors ${
+                              idx === 0 ? 'text-slate-300 cursor-not-allowed' : 'text-slate-600 hover:text-blue-600 cursor-pointer'
+                            }`}
+                            title="Move Chapter Up"
+                          >
+                            <ChevronUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={idx === chapters.length - 1}
+                            onClick={() => handleMoveOrder(idx, 'down')}
+                            className={`p-1 rounded hover:bg-slate-200 transition-colors ${
+                              idx === chapters.length - 1 ? 'text-slate-300 cursor-not-allowed' : 'text-slate-600 hover:text-blue-600 cursor-pointer'
+                            }`}
+                            title="Move Chapter Down"
+                          >
+                            <ChevronDown className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        <span className="w-7 h-7 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-black text-xs border border-blue-100 shadow-2xs">
+                          {c.sequenceOrder}
+                        </span>
+                      </div>
                     </td>
                     <td className="py-3.5 px-4 font-bold text-slate-900 text-sm">
                       {c.title}
@@ -453,11 +627,41 @@ export default function ChapterManager() {
                     </td>
                     <td className="py-3.5 px-4">
                       {c.quizTitle ? (
-                        <span className="font-bold text-blue-600 flex items-center gap-1">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> {c.quizTitle}
-                        </span>
+                        <div className="space-y-1">
+                          <div className="font-bold text-slate-800 flex items-center gap-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                            <span className="truncate max-w-[180px]">{c.quizTitle}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {c.questionCount > 0 ? (
+                              <span className="text-[10px] font-black px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-md border border-emerald-200">
+                                {c.questionCount} Questions Ready
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-black px-2 py-0.5 bg-amber-50 text-amber-700 rounded-md border border-amber-200 flex items-center gap-1">
+                                <AlertTriangle className="w-3 h-3 text-amber-600" /> 0 Questions (Empty)
+                              </span>
+                            )}
+                            <button
+                              onClick={() => handleOpenImport(c)}
+                              className="text-[10px] font-bold text-blue-600 hover:text-blue-800 underline cursor-pointer"
+                              title="Import CSV Questions"
+                            >
+                              + Import CSV
+                            </button>
+                          </div>
+                        </div>
                       ) : (
-                        <span className="text-slate-400 italic">None linked</span>
+                        <div className="space-y-1">
+                          <span className="text-slate-400 italic text-[11px] block">No quiz linked</span>
+                          <button
+                            onClick={() => handleQuickCreateQuiz(c)}
+                            className="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-[10px] font-bold border border-blue-200 transition-colors flex items-center gap-1 cursor-pointer"
+                            title="1-Click Create & Link Quiz"
+                          >
+                            <Plus className="w-3 h-3" /> Quick-Create Quiz
+                          </button>
+                        </div>
                       )}
                     </td>
                     <td className="py-3.5 px-4 text-right">
@@ -614,13 +818,56 @@ export default function ChapterManager() {
                 </div>
 
                 {editorTab === 'write' ? (
-                  <textarea
-                    rows={12}
-                    value={formData.readingMaterial}
-                    onChange={(e) => setFormData({ ...formData, readingMaterial: e.target.value })}
-                    placeholder="# Heading&#10;&#10;Write note content here..."
-                    className="w-full font-mono text-xs p-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 leading-relaxed"
-                  />
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap items-center gap-1.5 p-2 bg-slate-100 rounded-xl border border-slate-200">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 mr-1 flex items-center gap-1">
+                        <Sparkles className="w-3 h-3 text-amber-500" /> Insert Template:
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => insertTemplate('loksewa')}
+                        className="px-2.5 py-1 bg-white hover:bg-blue-50 text-slate-700 hover:text-blue-700 font-bold rounded-lg border border-slate-200 shadow-2xs transition-all flex items-center gap-1 cursor-pointer text-[11px]"
+                      >
+                        <FileText className="w-3 h-3 text-blue-600" /> + Loksewa Section
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => insertTemplate('formula')}
+                        className="px-2.5 py-1 bg-white hover:bg-purple-50 text-slate-700 hover:text-purple-700 font-bold rounded-lg border border-slate-200 shadow-2xs transition-all flex items-center gap-1 cursor-pointer text-[11px]"
+                      >
+                        <Code className="w-3 h-3 text-purple-600" /> + KaTeX Formula
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => insertTemplate('match')}
+                        className="px-2.5 py-1 bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 font-bold rounded-lg border border-slate-200 shadow-2xs transition-all flex items-center gap-1 cursor-pointer text-[11px]"
+                      >
+                        <Layers className="w-3 h-3 text-emerald-600" /> + Match Pairs
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => insertTemplate('callout')}
+                        className="px-2.5 py-1 bg-white hover:bg-amber-50 text-slate-700 hover:text-amber-700 font-bold rounded-lg border border-slate-200 shadow-2xs transition-all flex items-center gap-1 cursor-pointer text-[11px]"
+                      >
+                        <AlertTriangle className="w-3 h-3 text-amber-600" /> + High-Yield Tip
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => insertTemplate('summary')}
+                        className="px-2.5 py-1 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 font-bold rounded-lg border border-slate-200 shadow-2xs transition-all flex items-center gap-1 cursor-pointer text-[11px]"
+                      >
+                        <CheckCircle2 className="w-3 h-3 text-slate-600" /> + Key Points
+                      </button>
+                    </div>
+
+                    <textarea
+                      rows={12}
+                      value={formData.readingMaterial}
+                      onChange={(e) => setFormData({ ...formData, readingMaterial: e.target.value })}
+                      placeholder="# Heading&#10;&#10;Write note content here..."
+                      className="w-full font-mono text-xs p-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 leading-relaxed"
+                    />
+                  </div>
                 ) : (
                   <div className="border border-slate-200 rounded-2xl p-4 max-h-[350px] overflow-y-auto bg-slate-50/50">
                     <MarkdownNotesViewer
