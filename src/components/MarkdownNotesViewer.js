@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { auth } from '@/utils/firebase';
 
-function formatNotesMarkdown(raw) {
+export function formatNotesMarkdown(raw) {
   if (!raw) return '';
   let text = raw;
 
@@ -32,8 +32,15 @@ function formatNotesMarkdown(raw) {
   text = text.replace(/(?:^|\n)\s*गहन सन्दर्भ[^\n:]*[:]?([^\n]+)/g, '\n\n> 📖 **गहन सन्दर्भ तथा विषयवस्तु विस्तार:** $1\n\n');
   text = text.replace(/(?:^|\n)\s*विगत परीक्षा[^\n:]*[:]?([^\n]+)/g, '\n\n> 🎯 **विगत परीक्षा प्रश्न विश्लेषण:** $1\n\n');
 
-  // Format Topic headers if written as: "### Topic 1: [Title]"
-  text = text.replace(/###\s*Topic\s*(\d+)[:\s]*([^\n]+)/gi, '### TOPIC $1\n## $2');
+  // Strip duplicate heading hashes like "## ## " or "### ### "
+  text = text.replace(/^(#{1,6})\s*(?:#{1,6}\s*)+/gm, '$1 ');
+
+  // Format Topic headers if written as: "### Topic 1: [Title]" on a single line
+  // Note: explicitly require colon on the SAME line to prevent matching across newlines
+  text = text.replace(/###[^\S\r\n]*Topic[^\S\r\n]*(\d+)[^\S\r\n]*:[^\S\r\n]*(?:##\s*)?([^\r\n]+)/gi, '\n\n### TOPIC $1\n\n## $2\n\n');
+
+  // Clean any accidental leftover "## ## "
+  text = text.replace(/(?:^|\n)##\s+##\s+/g, '\n\n## ');
 
   // Ensure consecutive list items don't merge: convert single linebreaks into double or break
   text = text.replace(/\n(- [^\n]+)/g, '\n\n$1');
@@ -181,32 +188,45 @@ export default function MarkdownNotesViewer({
           </div>
         )}
 
-        {/* Prose Container with Controlled Optimal Reading Width (max-w-prose / max-w-3xl) */}
-        <div className="max-w-3xl mx-auto prose prose-slate prose-headings:font-black prose-headings:text-slate-900 prose-headings:tracking-tight prose-p:text-slate-700 prose-p:leading-[1.8] prose-p:text-base prose-li:text-slate-700 prose-li:leading-relaxed prose-strong:text-slate-900 prose-strong:font-black">
+        {/* Prose Container with Controlled Optimal Reading Width & Modern Font Stack */}
+        <div className="max-w-3xl mx-auto prose prose-slate font-sans antialiased text-slate-800 prose-headings:font-black prose-headings:text-slate-900 prose-headings:tracking-tight prose-p:text-slate-700 prose-p:leading-[1.85] prose-p:text-base prose-li:text-slate-700 prose-li:leading-[1.75] prose-strong:text-slate-900 prose-strong:font-black">
           <ReactMarkdown
             remarkPlugins={[remarkGfm, remarkMath]}
             rehypePlugins={[rehypeKatex]}
             components={{
               h1: ({ node, ...props }) => (
-                <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight mt-6 mb-3 pb-2 border-b border-slate-200" {...props} />
+                <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight mt-7 mb-4 pb-2 border-b border-slate-200" {...props} />
               ),
-              h2: ({ node, children, ...props }) => (
-                <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight mt-6 mb-2 flex items-center gap-2" {...props}>
-                  {children}
-                </h2>
-              ),
+              h2: ({ node, children, ...props }) => {
+                let cleanChildren = children;
+                if (typeof children === 'string') {
+                  cleanChildren = children.replace(/^#+\s*/, '');
+                } else if (Array.isArray(children) && typeof children[0] === 'string') {
+                  cleanChildren = [children[0].replace(/^#+\s*/, ''), ...children.slice(1)];
+                }
+                return (
+                  <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight mt-7 mb-3 flex items-center gap-2" {...props}>
+                    {cleanChildren}
+                  </h2>
+                );
+              },
               h3: ({ node, children, ...props }) => {
                 const text = typeof children === 'string' ? children : Array.isArray(children) ? children.join(' ') : '';
                 if (text.startsWith('TOPIC ') || text.includes('TOPIC')) {
+                  let cleanTopic = text.replace(/^#+\s*/, '');
                   return (
-                    <div className="mt-8 mb-1 inline-flex items-center gap-1.5 px-3 py-1 bg-blue-100 text-blue-800 text-[11px] font-black uppercase tracking-widest rounded-lg border border-blue-200 shadow-2xs">
-                      <span>{children}</span>
+                    <div className="mt-8 mb-2 inline-flex items-center gap-1.5 px-3 py-1 bg-blue-100 text-blue-800 text-[11px] font-black uppercase tracking-widest rounded-lg border border-blue-200 shadow-2xs">
+                      <span>{cleanTopic}</span>
                     </div>
                   );
                 }
+                let cleanChildren = children;
+                if (typeof children === 'string') {
+                  cleanChildren = children.replace(/^#+\s*/, '');
+                }
                 return (
                   <h3 className="text-lg md:text-xl font-bold text-slate-900 mt-6 mb-2" {...props}>
-                    {children}
+                    {cleanChildren}
                   </h3>
                 );
               },
@@ -214,10 +234,10 @@ export default function MarkdownNotesViewer({
                 <h4 className="text-base font-black text-slate-800 mt-5 mb-2 uppercase tracking-wide flex items-center gap-2" {...props} />
               ),
               p: ({ node, ...props }) => (
-                <p className="my-2.5 text-slate-700 leading-relaxed text-sm md:text-base font-normal" {...props} />
+                <p className="my-3 text-slate-700 leading-[1.85] text-base md:text-[16px] font-normal" {...props} />
               ),
               li: ({ node, children, ...props }) => (
-                <li className="my-1.5 text-slate-800 text-sm md:text-[15px] leading-relaxed list-none pl-0 flex items-start gap-2.5" {...props}>
+                <li className="my-2 text-slate-800 text-sm md:text-base leading-[1.75] list-none pl-0 flex items-start gap-2.5" {...props}>
                   <span className="flex-1">{children}</span>
                 </li>
               ),

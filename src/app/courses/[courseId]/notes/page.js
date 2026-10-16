@@ -8,7 +8,7 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 import Logo from '@/components/Logo';
-import BrandName from '@/components/BrandName';
+import { formatNotesMarkdown } from '@/components/MarkdownNotesViewer';
 import { 
   BookOpen, Printer, ArrowLeft, Clock, 
   List, Layers, ExternalLink, Bookmark, CheckCircle2,
@@ -315,12 +315,39 @@ export default function MasterNotesPage() {
                       h1: ({ node, ...props }) => (
                         <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight mt-8 mb-4 pb-2 border-b border-slate-100" {...props} />
                       ),
-                      h2: ({ node, ...props }) => (
-                        <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight mt-7 mb-3" {...props} />
-                      ),
-                      h3: ({ node, ...props }) => (
-                        <h3 className="text-lg md:text-xl font-bold text-slate-900 mt-5 mb-2" {...props} />
-                      ),
+                      h2: ({ node, children, ...props }) => {
+                        let cleanChildren = children;
+                        if (typeof children === 'string') {
+                          cleanChildren = children.replace(/^#+\s*/, '');
+                        } else if (Array.isArray(children) && typeof children[0] === 'string') {
+                          cleanChildren = [children[0].replace(/^#+\s*/, ''), ...children.slice(1)];
+                        }
+                        return (
+                          <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight mt-7 mb-3" {...props}>
+                            {cleanChildren}
+                          </h2>
+                        );
+                      },
+                      h3: ({ node, children, ...props }) => {
+                        const text = typeof children === 'string' ? children : Array.isArray(children) ? children.join(' ') : '';
+                        if (text.startsWith('TOPIC ') || text.includes('TOPIC')) {
+                          let cleanTopic = text.replace(/^#+\s*/, '');
+                          return (
+                            <div className="mt-8 mb-2 inline-flex items-center gap-1.5 px-3 py-1 bg-blue-100 text-blue-800 text-[11px] font-black uppercase tracking-widest rounded-lg border border-blue-200 shadow-2xs">
+                              <span>{cleanTopic}</span>
+                            </div>
+                          );
+                        }
+                        let cleanChildren = children;
+                        if (typeof children === 'string') {
+                          cleanChildren = children.replace(/^#+\s*/, '');
+                        }
+                        return (
+                          <h3 className="text-lg md:text-xl font-bold text-slate-900 mt-5 mb-2" {...props}>
+                            {cleanChildren}
+                          </h3>
+                        );
+                      },
                       blockquote: ({ node, ...props }) => (
                         <blockquote 
                           className="my-6 p-4 md:p-5 bg-gradient-to-r from-blue-50/80 to-indigo-50/30 border-l-4 border-blue-600 rounded-r-2xl text-slate-800 font-medium not-italic shadow-2xs leading-relaxed" 
@@ -362,7 +389,7 @@ export default function MasterNotesPage() {
                       }
                     }}
                   >
-                    {chap.readingMaterial || '*No text provided for this chapter.*'}
+                    {formatNotesMarkdown(chap.readingMaterial) || '*No text provided for this chapter.*'}
                   </ReactMarkdown>
                 </div>
               </article>
@@ -389,8 +416,7 @@ export default function MasterNotesPage() {
       <footer className="py-12 text-center text-xs text-slate-400 font-medium border-t border-slate-200 bg-white print:hidden mt-12">
         <div className="max-w-4xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <Logo className="w-6 h-6" />
-            <BrandName />
+            <Logo compact />
           </div>
           <p>Official Curriculum Study Handbook • All Rights Reserved &copy; 2026</p>
           <div className="flex items-center gap-4 text-slate-500 font-bold">

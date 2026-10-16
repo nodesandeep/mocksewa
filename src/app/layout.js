@@ -138,7 +138,9 @@ export default function RootLayout({ children }) {
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Noto+Sans+Devanagari:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -149,7 +151,7 @@ export default function RootLayout({ children }) {
         />
       </head>
 
-      <body className={`${inter.className} antialiased bg-slate-50 text-slate-900`}>
+      <body className="antialiased bg-slate-50 text-slate-900 font-sans selection:bg-blue-100 selection:text-blue-900">
         <SecurityDeterrent />
         {/* PWA Service Worker Registration for TWA */}
         <script dangerouslySetInnerHTML={{ __html: `

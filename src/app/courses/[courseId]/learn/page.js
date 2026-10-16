@@ -6,7 +6,6 @@ import { auth } from '@/utils/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import MarkdownNotesViewer from '@/components/MarkdownNotesViewer';
 import Logo from '@/components/Logo';
-import BrandName from '@/components/BrandName';
 import { 
   BookOpen, CheckCircle2, Lock, ArrowLeft, Award, 
   HelpCircle, Sparkles, ChevronRight, Play, Compass,
@@ -110,12 +109,9 @@ export default function GuidedMasteryPage() {
             >
               <ArrowLeft className="w-4 h-4" />
             </Link>
-            <div className="flex items-center gap-2 shrink-0">
-              <Logo className="w-7 h-7" />
-              <div className="hidden sm:block">
-                <BrandName />
-              </div>
-              <span className="inline-flex items-center gap-1 text-[10px] font-black px-2.5 py-0.5 bg-blue-50 text-blue-700 rounded-full uppercase tracking-wider border border-blue-200/70">
+            <div className="flex items-center gap-2.5 shrink-0">
+              <Logo compact />
+              <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-black px-2.5 py-0.5 bg-blue-50 text-blue-700 rounded-full uppercase tracking-wider border border-blue-200/70">
                 <Compass className="w-3 h-3 text-blue-600" /> Guided Path
               </span>
             </div>
