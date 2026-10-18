@@ -1,25 +1,12 @@
 import { NextResponse } from 'next/server';
-import { adminAuth } from '@/utils/firebase-admin';
 import turso from '@/utils/turso';
-
-// ─── Admin auth guard ─────────────────────────────────────────────────
-async function verifyAdmin(request) {
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader?.startsWith('Bearer ')) return null;
-  try {
-    const decoded = await adminAuth.verifyIdToken(authHeader.split('Bearer ')[1]);
-    // Check if user is admin (you might have a specific check here, 
-    // but for now we assume verifyIdToken is enough if the UI only allows admins)
-    // Ideally check custom claims or a specific admin list
-    return decoded;
-  } catch {
-    return null;
-  }
-}
+import { verifyAdminUser } from '@/utils/admin-guard';
 
 export async function GET(request) {
-  const user = await verifyAdmin(request);
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const authCheck = await verifyAdminUser(request);
+  if (!authCheck.authorized) {
+    return NextResponse.json({ error: authCheck.error }, { status: authCheck.status });
+  }
 
   const { searchParams } = new URL(request.url);
   const uid = searchParams.get('uid');
@@ -42,8 +29,10 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-  const admin = await verifyAdmin(request);
-  if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const authCheck = await verifyAdminUser(request);
+  if (!authCheck.authorized) {
+    return NextResponse.json({ error: authCheck.error }, { status: authCheck.status });
+  }
 
   try {
     const { uid, status, action } = await request.json();

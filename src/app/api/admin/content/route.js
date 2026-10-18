@@ -1,20 +1,14 @@
 import { NextResponse } from 'next/server';
-import { adminAuth } from '@/utils/firebase-admin';
 import turso from '@/utils/turso';
-
-// ─── Admin auth guard ─────────────────────────────────────────────────
-async function verifyAdmin(request) {
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader?.startsWith('Bearer ')) return null;
-  try {
-    return await adminAuth.verifyIdToken(authHeader.split('Bearer ')[1]);
-  } catch {
-    return null;
-  }
-}
+import { verifyAdminUser } from '@/utils/admin-guard';
 
 // ─── GET: Read content ────────────────────────────────────────────────
 export async function GET(request) {
+  const authCheck = await verifyAdminUser(request);
+  if (!authCheck.authorized) {
+    return NextResponse.json({ error: authCheck.error }, { status: authCheck.status });
+  }
+
   const { searchParams } = new URL(request.url);
   const type = searchParams.get('type');
   const courseId = searchParams.get('courseId');
@@ -86,8 +80,10 @@ export async function GET(request) {
 
 // ─── POST: Write content ──────────────────────────────────────────────
 export async function POST(request) {
-  const user = await verifyAdmin(request);
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const authCheck = await verifyAdminUser(request);
+  if (!authCheck.authorized) {
+    return NextResponse.json({ error: authCheck.error }, { status: authCheck.status });
+  }
 
   try {
     const { type, action, data } = await request.json();

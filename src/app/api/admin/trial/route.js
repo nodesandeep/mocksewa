@@ -1,24 +1,16 @@
 import { NextResponse } from 'next/server';
-import { adminAuth } from '@/utils/firebase-admin';
 import turso from '@/utils/turso';
-
-async function verifyAdmin(request) {
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader?.startsWith('Bearer ')) return null;
-  try {
-    return await adminAuth.verifyIdToken(authHeader.split('Bearer ')[1]);
-  } catch {
-    return null;
-  }
-}
+import { verifyAdminUser } from '@/utils/admin-guard';
 
 /**
  * GET /api/admin/trial
  * Returns all trial course mappings with stats
  */
 export async function GET(request) {
-  const user = await verifyAdmin(request);
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const authCheck = await verifyAdminUser(request);
+  if (!authCheck.authorized) {
+    return NextResponse.json({ error: authCheck.error }, { status: authCheck.status });
+  }
 
   try {
     const res = await turso.execute(`
@@ -50,8 +42,10 @@ export async function GET(request) {
  * body: { action: 'remove', courseId } — Remove trial mapping for a course
  */
 export async function POST(request) {
-  const user = await verifyAdmin(request);
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const authCheck = await verifyAdminUser(request);
+  if (!authCheck.authorized) {
+    return NextResponse.json({ error: authCheck.error }, { status: authCheck.status });
+  }
 
   try {
     const { action, courseId, quizId } = await request.json();

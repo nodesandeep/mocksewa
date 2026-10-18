@@ -1,16 +1,7 @@
 import { NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/utils/firebase-admin';
 import turso from '@/utils/turso';
-
-async function verifyAdmin(request) {
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader?.startsWith('Bearer ')) return null;
-  try {
-    return await adminAuth.verifyIdToken(authHeader.split('Bearer ')[1]);
-  } catch {
-    return null;
-  }
-}
+import { verifyAdminUser } from '@/utils/admin-guard';
 
 const ONLINE_THRESHOLD_MINS = 5;
 const PAGE_SIZE = 20;
@@ -27,8 +18,10 @@ const PAGE_SIZE = 20;
  *   uid=X  (single user fingerprint — returns deep profile)
  */
 export async function GET(request) {
-  const admin = await verifyAdmin(request);
-  if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const authCheck = await verifyAdminUser(request);
+  if (!authCheck.authorized) {
+    return NextResponse.json({ error: authCheck.error }, { status: authCheck.status });
+  }
 
   const { searchParams } = new URL(request.url);
   const status = searchParams.get('status') || 'all';

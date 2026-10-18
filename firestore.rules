@@ -4,14 +4,21 @@ service cloud.firestore {
     
     // Helper: Check if user is an admin
     function isAdmin() {
-      return request.auth != null && 
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      return request.auth != null && (
+        request.auth.token.email == 'nodesandeep@gmail.com' ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
     }
 
-    // User Profiles: Users can read/write their own data
+    // User Profiles: Secure ownership with protected privilege fields
     match /users/{userId} {
       allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
-      allow write: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      allow create: if request.auth != null && request.auth.uid == userId && request.resource.data.role != 'admin';
+      allow update: if request.auth != null && (
+        isAdmin() || 
+        (request.auth.uid == userId && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'enrolledCourses']))
+      );
+      allow delete: if isAdmin();
       
       // Mistakes sub-collection
       match /mistakes/{mistakeId} {
