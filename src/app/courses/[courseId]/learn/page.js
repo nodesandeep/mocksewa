@@ -321,8 +321,8 @@ export default function GuidedMasteryPage() {
                           </h4>
 
                           <div className="flex items-center gap-2 mt-1.5 text-[11px] text-slate-500 font-medium">
-                            <span className="flex items-center gap-1">
-                              <Clock className="w-3 h-3 text-slate-400" /> {chap.estimatedReadMinutes || 8}m
+                            <span className="flex items-center gap-1 text-blue-600 font-bold">
+                              <Sparkles className="w-3 h-3 text-blue-500" /> Self-Paced
                             </span>
                             <span className="text-slate-300">•</span>
                             <span className="flex items-center gap-1">

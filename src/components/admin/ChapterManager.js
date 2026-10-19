@@ -251,6 +251,12 @@ export default function ChapterManager() {
       case 'callout':
         snippet = `\n\n> 🎯 **Past Exam Trend & Trap:**\n> *Repeated in 2079 & 2081 exams.* Pay special attention to exception clauses and date of enactment.\n`;
         break;
+      case 'topic':
+        snippet = `\n\n---\n\n### TOPIC \n\n## [विषय / Topic Title Here]\n\n- ⭐ Key Fact or Definition 1\n- ⭐ Key Fact or Statistical Detail 2\n\n> 💡 **सूत्र:** Mnemonic or memory aid\n`;
+        break;
+      case 'slide':
+        snippet = `\n\n---\n\n#### [Slide Sub-Section Title]\n\n- ⭐ Sub-concept point 1\n- ⭐ Comparative data point 2\n`;
+        break;
       case 'summary':
         snippet = `\n\n### ⚡ Rapid-Recall Key Takeaways\n- [ ] **Point 1:** Core definitions and constitutional scope.\n- [ ] **Point 2:** Disciplinary and administrative actions under regulations.\n- [ ] **Point 3:** Mandatory quotas and reservations percentages.\n`;
         break;
@@ -575,7 +581,7 @@ export default function ChapterManager() {
                   <th className="py-3 px-4">Order</th>
                   <th className="py-3 px-4">Chapter Title</th>
                   <th className="py-3 px-4">Threshold</th>
-                  <th className="py-3 px-4">Read Time</th>
+                  <th className="py-3 px-4">Pacing</th>
                   <th className="py-3 px-4">Linked Quiz & Questions</th>
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
@@ -628,8 +634,10 @@ export default function ChapterManager() {
                         {c.passingThreshold || 60}%
                       </span>
                     </td>
-                    <td className="py-3.5 px-4 text-slate-500 font-semibold">
-                      {c.estimatedReadMinutes || 8} mins
+                    <td className="py-3.5 px-4">
+                      <span className="px-2.5 py-1 bg-blue-50 text-blue-700 font-bold rounded-lg border border-blue-200/80 text-[11px] shadow-2xs">
+                        Self-Paced
+                      </span>
                     </td>
                     <td className="py-3.5 px-4">
                       {c.quizTitle ? (
@@ -768,14 +776,11 @@ export default function ChapterManager() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Est. Read Time (Min)</label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={formData.estimatedReadMinutes}
-                    onChange={(e) => setFormData({ ...formData, estimatedReadMinutes: parseInt(e.target.value) || 8 })}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Study Pacing</label>
+                  <div className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 flex items-center gap-1.5 shadow-2xs">
+                    <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Self-Paced (Untimed Slides)</span>
+                  </div>
                 </div>
 
                 <div className="space-y-1">
@@ -830,6 +835,22 @@ export default function ChapterManager() {
                       <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 mr-0.5 flex items-center gap-1.5 pl-1">
                         <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Insert Template:
                       </span>
+                      <button
+                        type="button"
+                        onClick={() => insertTemplate('topic')}
+                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer text-xs active:scale-95"
+                        title="Insert a new Topic slide block with title and star points"
+                      >
+                        <Layers className="w-3.5 h-3.5 text-white" /> + New Topic
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => insertTemplate('slide')}
+                        className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl border border-indigo-200 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer text-xs active:scale-95"
+                        title="Split topic into next bite-sized slide with ---"
+                      >
+                        <BookOpen className="w-3.5 h-3.5 text-indigo-600" /> + Slide Break (---)
+                      </button>
                       <button
                         type="button"
                         onClick={() => insertTemplate('loksewa')}

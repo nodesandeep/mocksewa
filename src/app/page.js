@@ -139,11 +139,11 @@ export default function LandingPage() {
               </motion.div>
               
               <h1 className="text-4xl md:text-6xl font-black tracking-tight text-slate-900 leading-[1.1]">
-                 Crack Your Dream Exam with <br/> <span className="text-blue-600">Nepal's Best Mock Tests.</span>
+                 Master Every Topic. <br/> <span className="text-blue-600">Ace Your Dream Exam.</span>
               </h1>
               
               <p className="text-lg text-slate-600 font-medium leading-relaxed max-w-xl mx-auto lg:mx-0">
-                 Trusted by 10,000+ aspirants for NEA, PSC, NEC, and NMC. Get real-time rankings and detailed 💡 hints.
+                 Nepal's #1 Smart LMS & Mock Test Platform for Loksewa (PSC), NEC Engineering, NMC Medical, and Competitive Entrances. Learn through bite-sized slide notes, untimed topic practice, and real exam simulations.
               </p>
 
               {/* SEARCH BAR */}
@@ -393,14 +393,14 @@ export default function LandingPage() {
           <div className="max-w-7xl mx-auto px-6">
             <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-blue-100 text-blue-800 rounded-full text-xs font-black uppercase tracking-wider">
-                ⚡ Beyond Standard Mock Tests
+                ⚡ Proven 4-Step Learning Engine
               </div>
               <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight">
-                An End-to-End Learning System <br />
-                <span className="text-blue-600">Built for Exam Success.</span>
+                From Fundamental Theory to <br />
+                <span className="text-blue-600">Licensed Rank-1 Mastery.</span>
               </h2>
               <p className="text-slate-600 text-base md:text-lg font-medium">
-                Traditional mock exams only test what you already know. MyMockSewa guides you from fundamental theory to licensed mastery with sequential progression.
+                No more cognitive overload from endless text. MyMockSewa breaks lengthy syllabi into bite-sized topic slides, reinforces memory with untimed mini-quizzes, and builds exam speed with real timed mock simulations.
               </p>
             </div>
 
@@ -408,72 +408,72 @@ export default function LandingPage() {
               {/* Feature 1 */}
               <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl shadow-blue-900/5 flex flex-col justify-between group hover:-translate-y-2 hover:border-blue-300 transition-all duration-300">
                 <div className="space-y-4">
-                  <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">
-                    🗺️
+                  <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">
+                    📖
                   </div>
                   <h3 className="text-xl font-black text-slate-900 tracking-tight">
-                    Sequential Roadmaps
+                    Topic-by-Topic Slides
                   </h3>
                   <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                    Duolingo-style visual learning paths. Read syllabus notes, take instant chapter quizzes, and pass with 60%+ to unlock next stages.
+                    Bite-sized, high-yield slides featuring mnemonics (सूत्र), past question alerts, and key facts. Read comfortably at your own pace with zero countdown stress.
                   </p>
                 </div>
-                <div className="pt-6 border-t border-slate-100 flex items-center text-xs font-black uppercase tracking-wider text-emerald-600">
-                  Read → Test → Unlock
+                <div className="pt-6 border-t border-slate-100 flex items-center text-xs font-black uppercase tracking-wider text-blue-600">
+                  Step 1 · Deep Study
                 </div>
               </div>
 
               {/* Feature 2 */}
               <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl shadow-blue-900/5 flex flex-col justify-between group hover:-translate-y-2 hover:border-blue-300 transition-all duration-300">
                 <div className="space-y-4">
-                  <div className="w-14 h-14 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">
-                    🧠
+                  <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">
+                    🎯
                   </div>
                   <h3 className="text-xl font-black text-slate-900 tracking-tight">
-                    Smart Mistakes Drill
+                    Instant Recall Checks
                   </h3>
                   <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                    Automated spaced repetition notebook. Focus your precious study hours exclusively on the tricky questions you previously missed.
+                    Test comprehension immediately after each topic with untimed practice drills. Pass the topic checkpoint to unlock the next concept on your journey.
                   </p>
                 </div>
-                <div className="pt-6 border-t border-slate-100 flex items-center text-xs font-black uppercase tracking-wider text-rose-600">
-                  Spaced Repetition
+                <div className="pt-6 border-t border-slate-100 flex items-center text-xs font-black uppercase tracking-wider text-emerald-600">
+                  Step 2 · Memory Recall
                 </div>
               </div>
 
               {/* Feature 3 */}
               <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl shadow-blue-900/5 flex flex-col justify-between group hover:-translate-y-2 hover:border-blue-300 transition-all duration-300">
                 <div className="space-y-4">
-                  <div className="w-14 h-14 bg-sky-50 text-sky-600 rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">
-                    📑
+                  <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">
+                    🗺️
                   </div>
                   <h3 className="text-xl font-black text-slate-900 tracking-tight">
-                    In-Note Highlighting
+                    Sequential Roadmap
                   </h3>
                   <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                    Select text, legal acts, or equations in chapter notes and bookmark them straight into your personal Revision Cheat-Sheet with one tap.
+                    A visual milestone tree that tracks your chapters and recall positions. Resume exactly where you left off without ever losing your study place.
                   </p>
                 </div>
-                <div className="pt-6 border-t border-slate-100 flex items-center text-xs font-black uppercase tracking-wider text-sky-600">
-                  Personal Cheat-Sheet
+                <div className="pt-6 border-t border-slate-100 flex items-center text-xs font-black uppercase tracking-wider text-indigo-600">
+                  Step 3 · Progress Tree
                 </div>
               </div>
 
               {/* Feature 4 */}
               <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl shadow-blue-900/5 flex flex-col justify-between group hover:-translate-y-2 hover:border-blue-300 transition-all duration-300">
                 <div className="space-y-4">
-                  <div className="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">
-                    📐
+                  <div className="w-14 h-14 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">
+                    ⏱️
                   </div>
                   <h3 className="text-xl font-black text-slate-900 tracking-tight">
-                    Math & Nepali Notes
+                    Timed Exam Simulations
                   </h3>
                   <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                    Full KaTeX mathematical LaTeX rendering, engineering circuit diagrams, and seamless Nepali Unicode formatting for civil & Loksewa laws.
+                    Full-length exam hall simulations under strict countdown timers with negative marking, percentile ranking, and live All-Nepal leaderboard standing.
                   </p>
                 </div>
-                <div className="pt-6 border-t border-slate-100 flex items-center text-xs font-black uppercase tracking-wider text-purple-600">
-                  Math / LaTeX / Unicode
+                <div className="pt-6 border-t border-slate-100 flex items-center text-xs font-black uppercase tracking-wider text-amber-600">
+                  Step 4 · Exam Simulation
                 </div>
               </div>
             </div>

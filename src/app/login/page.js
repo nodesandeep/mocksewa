@@ -153,22 +153,29 @@ function LoginContent() {
       <div className="hidden lg:flex flex-col justify-center p-24 bg-brand text-white space-y-8 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2"></div>
         <div className="space-y-4 relative z-10">
-          <Logo light={true} className="mb-12 scale-150 origin-left" />
-          <p className="text-xl text-blue-100 font-medium max-w-md">
-            Empowering Nepal's future through high-performance digital solutions
-            for Loksewa, Engineering, and Medical license exams.
+          <Logo light={true} className="mb-8 scale-125 origin-left" />
+          <h1 className="text-3xl font-black text-white tracking-tight leading-snug">
+            Nepal's Premier Smart LMS & Exam Simulation Platform
+          </h1>
+          <p className="text-base text-blue-100 font-medium max-w-md leading-relaxed">
+            Master high-yield syllabi with bite-sized slide notes, untimed topic practice, and realistic timed mock tests.
           </p>
         </div>
-        <div className="space-y-6 pt-12">
+        <div className="space-y-4 pt-4">
           <StatItem
-            icon="🎓"
-            label="200+ Premium Courses"
-            sub="Expertly curated content"
+            icon="🏛️"
+            label="PSC, NEC & NMC Prep"
+            sub="Loksewa, Engineering & Medical Licensing"
+          />
+          <StatItem
+            icon="📖"
+            label="Topic-by-Topic Slides"
+            sub="High-yield notes with formulas & mnemonics"
           />
           <StatItem
             icon="⚡"
-            label="Real-time Performance"
-            sub="Instant analytics & feedback"
+            label="Real Exam Simulations"
+            sub="Full-set mock tests with all-Nepal rankings"
           />
         </div>
       </div>
