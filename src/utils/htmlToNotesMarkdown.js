@@ -242,17 +242,56 @@ function nodeToMarkdown(node) {
       case 'section':
       case 'article': {
         const className = (node.className || '').toLowerCase();
-        // Check for mnemonic / alert callout boxes
+
+        // 1. VidyaPDF / Loksewa section cards: <div class="section-card nepali">
+        if (className.includes('section-card')) {
+          const numEl = node.querySelector('.num');
+          const h3El = node.querySelector('.section-title h3, h3');
+          const h4El = node.querySelector('.section-title h4, h4');
+
+          const topicNum = numEl ? numEl.textContent.trim() : '';
+          const topicTitle = h3El ? h3El.textContent.trim() : '';
+          const subTitle = h4El ? h4El.textContent.trim() : '';
+
+          // Remove section-title element before reading children so it doesn't duplicate
+          const titleEl = node.querySelector('.section-title');
+          if (titleEl) titleEl.remove();
+
+          const innerBody = getChildrenMd().trim();
+
+          const topicHeader = topicNum 
+            ? `\n\n---\n\n### TOPIC ${topicNum}\n\n## ${topicTitle}${subTitle ? '\n*' + subTitle + '*' : ''}\n\n`
+            : `\n\n---\n\n## ${topicTitle}\n\n`;
+
+          return `${topicHeader}${innerBody}\n\n`;
+        }
+
+        // 2. Mnemonic / alert / exam tip callout boxes
+        const style = (node.getAttribute('style') || '').toLowerCase();
+        const textContent = node.textContent || '';
         const isCallout = 
           className.includes('callout') || 
           className.includes('mnemonic') || 
           className.includes('alert') || 
           className.includes('sutra') ||
-          className.includes('formula-box');
+          className.includes('formula-box') ||
+          style.includes('faf5ff') ||
+          style.includes('fffbeb') ||
+          style.includes('fff1f2') ||
+          style.includes('eff6ff') ||
+          style.includes('border-left') ||
+          textContent.includes('सूत्र') ||
+          textContent.includes('स्मरण रहोस्') ||
+          textContent.includes('स्रोत विमति') ||
+          textContent.includes('गहन सन्दर्भ') ||
+          textContent.includes('विगत परीक्षा');
 
         const inner = getChildrenMd();
         if (isCallout && inner.trim()) {
-          const lines = inner.trim().split('\n').map(l => `> ${l}`).join('\n');
+          const lines = inner.trim().split('\n').map(l => {
+            const cleanL = l.replace(/^>\s*/, '').trim();
+            return cleanL ? `> ${cleanL}` : '>';
+          }).join('\n');
           return `\n\n${lines}\n\n`;
         }
         return inner;

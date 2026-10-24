@@ -25,13 +25,28 @@ export function formatNotesMarkdown(raw) {
   text = text.replace(/☆\s*➤\s*/g, '\n  - ➤ ');
   text = text.replace(/(?<![-*]\s*)➤\s*/g, '\n  - ➤ ');
 
-  // Convert callout prefixes into standard blockquotes if not already formatted as blockquotes
-  text = text.replace(/(?:^|\n)\s*सूत्र[:\s]([^\n]+)/g, '\n\n> 💡 **सूत्र:** $1\n\n');
-  text = text.replace(/(?:^|\n)\s*सूत्र\s*"([^"]+)"[—:\s]([^\n]+)/g, '\n\n> 💡 **सूत्र: "$1"**\n> $2\n\n');
-  text = text.replace(/(?:^|\n)\s*[⚠⚠️]?\s*स्मरण रहोस्[^\n:]*[:]?([^\n]+)/g, '\n\n> ⚠️ **स्मरण रहोस् (Exam Alert):** $1\n\n');
-  text = text.replace(/(?:^|\n)\s*स्रोत विमति[^\n:]*[:]?([^\n]+)/g, '\n\n> 📌 **स्रोत विमति / स्पष्टीकरण:** $1\n\n');
-  text = text.replace(/(?:^|\n)\s*गहन सन्दर्भ[^\n:]*[:]?([^\n]+)/g, '\n\n> 📖 **गहन सन्दर्भ तथा विषयवस्तु विस्तार:** $1\n\n');
-  text = text.replace(/(?:^|\n)\s*विगत परीक्षा[^\n:]*[:]?([^\n]+)/g, '\n\n> 🎯 **विगत परीक्षा प्रश्न विश्लेषण:** $1\n\n');
+  // Convert any callout blocks (with or without bold asterisks, with or without blockquotes) into standard blockquotes
+  const blocks = text.split(/\n\s*\n/);
+  text = blocks.map(block => {
+    const trimmed = block.trim();
+    if (!trimmed) return '';
+
+    const isMnemonic = /(?:^|\n)\s*(?:>\s*)?\*{0,2}(?:सूत्र|सुत्र)/i.test(trimmed);
+    const isExamAlert = /(?:^|\n)\s*(?:>\s*)?\*{0,2}[⚠⚠️]?\s*स्मरण रहोस्/i.test(trimmed);
+    const isClarification = /(?:^|\n)\s*(?:>\s*)?\*{0,2}स्रोत विमति/i.test(trimmed);
+    const isDeepDive = /(?:^|\n)\s*(?:>\s*)?\*{0,2}गहन सन्दर्भ/i.test(trimmed);
+    const isPastAnalysis = /(?:^|\n)\s*(?:>\s*)?\*{0,2}विगत परीक्षा/i.test(trimmed);
+
+    if (isMnemonic || isExamAlert || isClarification || isDeepDive || isPastAnalysis) {
+      const lines = trimmed.split('\n').map(l => {
+        const cleanL = l.replace(/^>\s*/, '').trim();
+        return cleanL ? `> ${cleanL}` : '>';
+      }).join('\n');
+      return lines;
+    }
+
+    return block;
+  }).filter(Boolean).join('\n\n');
 
   // Strip duplicate heading hashes like "## ## " or "### ### "
   text = text.replace(/^(#{1,6})\s*(?:#{1,6}\s*)+/gm, '$1 ');
@@ -152,6 +167,66 @@ export function parseTopicsAndSlides(raw) {
   ];
 }
 
+function extractTextFromReactNode(node) {
+  if (!node) return '';
+  if (typeof node === 'string' || typeof node === 'number') return String(node);
+  if (Array.isArray(node)) return node.map(extractTextFromReactNode).join(' ');
+  if (node.props?.children) return extractTextFromReactNode(node.props.children);
+  return '';
+}
+
+function renderCalloutCard(type, children) {
+  switch (type) {
+    case 'mnemonic':
+      return (
+        <div className="my-5 p-4 md:p-5 bg-gradient-to-r from-purple-50/90 to-indigo-50/40 border-l-4 border-purple-600 rounded-r-2xl shadow-xs space-y-1.5 border border-purple-200/80">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-purple-600 text-white text-[10px] font-black rounded-full uppercase tracking-wider shadow-2xs">
+            💡 सूत्र (Mnemonic)
+          </div>
+          <div className="text-purple-950 font-bold text-sm leading-relaxed">{children}</div>
+        </div>
+      );
+    case 'examAlert':
+      return (
+        <div className="my-5 p-4 md:p-5 bg-gradient-to-r from-amber-50/90 to-yellow-50/40 border-l-4 border-amber-500 rounded-r-2xl shadow-xs space-y-1.5 border border-amber-200/80">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-amber-500 text-white text-[10px] font-black rounded-full uppercase tracking-wider shadow-2xs">
+            ⚠️ स्मरण रहोस् (Exam Alert)
+          </div>
+          <div className="text-amber-950 font-bold text-sm leading-relaxed">{children}</div>
+        </div>
+      );
+    case 'clarification':
+      return (
+        <div className="my-5 p-4 md:p-5 bg-gradient-to-r from-rose-50/90 to-red-50/30 border-l-4 border-rose-500 rounded-r-2xl shadow-xs space-y-1.5 border border-rose-200/80">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-rose-500 text-white text-[10px] font-black rounded-full uppercase tracking-wider shadow-2xs">
+            📌 स्रोत विमति / स्पष्टीकरण
+          </div>
+          <div className="text-rose-950 font-medium text-sm leading-relaxed">{children}</div>
+        </div>
+      );
+    case 'deepDive':
+      return (
+        <div className="my-5 p-4 md:p-5 bg-slate-50 border-l-4 border-slate-600 rounded-r-2xl shadow-xs space-y-1.5 border border-slate-200">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-slate-700 text-white text-[10px] font-black rounded-full uppercase tracking-wider shadow-2xs">
+            📖 गहन सन्दर्भ तथा विषयवस्तु विस्तार
+          </div>
+          <div className="text-slate-800 font-medium text-sm leading-relaxed">{children}</div>
+        </div>
+      );
+    case 'pastAnalysis':
+      return (
+        <div className="my-5 p-4 md:p-5 bg-gradient-to-r from-indigo-50/80 to-blue-50/30 border-l-4 border-indigo-600 rounded-r-2xl shadow-xs space-y-1.5 border border-indigo-200/80">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-indigo-600 text-white text-[10px] font-black rounded-full uppercase tracking-wider shadow-2xs">
+            🎯 विगत परीक्षा प्रश्न विश्लेषण
+          </div>
+          <div className="text-indigo-950 font-medium text-sm leading-relaxed">{children}</div>
+        </div>
+      );
+    default:
+      return null;
+  }
+}
+
 function MarkdownProse({ markdownText }) {
   return (
     <div className="max-w-3xl mx-auto prose prose-slate font-sans antialiased text-slate-800 prose-headings:font-black prose-headings:text-slate-900 prose-headings:tracking-tight prose-p:text-slate-700 prose-p:leading-[1.85] prose-p:text-base prose-li:text-slate-700 prose-li:leading-[1.75] prose-strong:text-slate-900 prose-strong:font-black">
@@ -198,82 +273,30 @@ function MarkdownProse({ markdownText }) {
           h4: ({ node, ...props }) => (
             <h4 className="text-base font-black text-slate-800 mt-5 mb-2 uppercase tracking-wide flex items-center gap-2" {...props} />
           ),
-          p: ({ node, ...props }) => (
-            <p className="my-3 text-slate-700 leading-[1.85] text-base md:text-[16px] font-normal" {...props} />
-          ),
+          p: ({ node, children, ...props }) => {
+            const rawText = extractTextFromReactNode(children);
+            if (rawText.includes('सूत्र') || rawText.includes('सुत्र')) return renderCalloutCard('mnemonic', children);
+            if (rawText.includes('स्मरण रहोस्') || rawText.includes('Exam Alert')) return renderCalloutCard('examAlert', children);
+            if (rawText.includes('स्रोत विमति') || rawText.includes('स्पष्टीकरण')) return renderCalloutCard('clarification', children);
+            if (rawText.includes('गहन सन्दर्भ') || rawText.includes('विषयवस्तु विस्तार')) return renderCalloutCard('deepDive', children);
+            if (rawText.includes('विगत परीक्षा') || rawText.includes('प्रश्न विश्लेषण')) return renderCalloutCard('pastAnalysis', children);
+
+            return <p className="my-3 text-slate-700 leading-[1.85] text-base md:text-[16px] font-normal" {...props}>{children}</p>;
+          },
           li: ({ node, children, ...props }) => (
             <li className="my-2 text-slate-800 text-sm md:text-base leading-[1.75] list-none pl-0 flex items-start gap-2.5" {...props}>
               <span className="flex-1">{children}</span>
             </li>
           ),
           blockquote: ({ node, children, ...props }) => {
-            const rawText = React.Children.toArray(children)
-              .map(c => (typeof c === 'string' ? c : c?.props?.children || ''))
-              .join(' ');
+            const rawText = extractTextFromReactNode(children);
 
-            const isMnemonic = rawText.includes('सूत्र') || rawText.includes('सुत्र');
-            const isExamAlert = rawText.includes('स्मरण रहोस्') || rawText.includes('Exam Alert');
-            const isClarification = rawText.includes('स्रोत विमति') || rawText.includes('स्पष्टीकरण');
-            const isDeepDive = rawText.includes('गहन सन्दर्भ') || rawText.includes('विषयवस्तु विस्तार');
-            const isPastAnalysis = rawText.includes('विगत परीक्षा') || rawText.includes('प्रश्न विश्लेषण');
-            const isCorrectAnswer = rawText.includes('Correct Answer') || rawText.includes('सही उत्तर');
-
-            if (isMnemonic) {
-              return (
-                <div className="my-5 p-4 md:p-5 bg-gradient-to-r from-purple-50/90 to-indigo-50/40 border-l-4 border-purple-600 rounded-r-2xl shadow-xs space-y-1.5 border border-purple-200/80">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-purple-600 text-white text-[10px] font-black rounded-full uppercase tracking-wider shadow-2xs">
-                    💡 सूत्र (Mnemonic)
-                  </div>
-                  <div className="text-purple-950 font-bold text-sm leading-relaxed">{children}</div>
-                </div>
-              );
-            }
-
-            if (isExamAlert) {
-              return (
-                <div className="my-5 p-4 md:p-5 bg-gradient-to-r from-amber-50/90 to-yellow-50/40 border-l-4 border-amber-500 rounded-r-2xl shadow-xs space-y-1.5 border border-amber-200/80">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-amber-500 text-white text-[10px] font-black rounded-full uppercase tracking-wider shadow-2xs">
-                    ⚠️ स्मरण रहोस् (Exam Alert)
-                  </div>
-                  <div className="text-amber-950 font-bold text-sm leading-relaxed">{children}</div>
-                </div>
-              );
-            }
-
-            if (isClarification) {
-              return (
-                <div className="my-5 p-4 md:p-5 bg-gradient-to-r from-rose-50/90 to-red-50/30 border-l-4 border-rose-500 rounded-r-2xl shadow-xs space-y-1.5 border border-rose-200/80">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-rose-500 text-white text-[10px] font-black rounded-full uppercase tracking-wider shadow-2xs">
-                    📌 स्रोत विमति / स्पष्टीकरण
-                  </div>
-                  <div className="text-rose-950 font-medium text-sm leading-relaxed">{children}</div>
-                </div>
-              );
-            }
-
-            if (isDeepDive) {
-              return (
-                <div className="my-5 p-4 md:p-5 bg-slate-50 border-l-4 border-slate-600 rounded-r-2xl shadow-xs space-y-1.5 border border-slate-200">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-slate-700 text-white text-[10px] font-black rounded-full uppercase tracking-wider shadow-2xs">
-                    📖 गहन सन्दर्भ तथा विषयवस्तु विस्तार
-                  </div>
-                  <div className="text-slate-800 font-medium text-sm leading-relaxed">{children}</div>
-                </div>
-              );
-            }
-
-            if (isPastAnalysis) {
-              return (
-                <div className="my-5 p-4 md:p-5 bg-gradient-to-r from-indigo-50/80 to-blue-50/30 border-l-4 border-indigo-600 rounded-r-2xl shadow-xs space-y-1.5 border border-indigo-200/80">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-indigo-600 text-white text-[10px] font-black rounded-full uppercase tracking-wider shadow-2xs">
-                    🎯 विगत परीक्षा प्रश्न विश्लेषण
-                  </div>
-                  <div className="text-indigo-950 font-medium text-sm leading-relaxed">{children}</div>
-                </div>
-              );
-            }
-
-            if (isCorrectAnswer) {
+            if (rawText.includes('सूत्र') || rawText.includes('सुत्र')) return renderCalloutCard('mnemonic', children);
+            if (rawText.includes('स्मरण रहोस्') || rawText.includes('Exam Alert')) return renderCalloutCard('examAlert', children);
+            if (rawText.includes('स्रोत विमति') || rawText.includes('स्पष्टीकरण')) return renderCalloutCard('clarification', children);
+            if (rawText.includes('गहन सन्दर्भ') || rawText.includes('विषयवस्तु विस्तार')) return renderCalloutCard('deepDive', children);
+            if (rawText.includes('विगत परीक्षा') || rawText.includes('प्रश्न विश्लेषण')) return renderCalloutCard('pastAnalysis', children);
+            if (rawText.includes('Correct Answer') || rawText.includes('सही उत्तर')) {
               return (
                 <div className="my-4 p-3.5 bg-emerald-50 border-l-4 border-emerald-600 rounded-r-xl shadow-2xs border border-emerald-200">
                   <div className="text-emerald-900 font-black text-sm leading-relaxed">{children}</div>
