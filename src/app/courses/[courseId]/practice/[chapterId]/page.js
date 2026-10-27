@@ -187,8 +187,15 @@ export default function ChapterPracticePage() {
 
             {/* Question Text */}
             <div className="space-y-2">
-              <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                Question {currentIndex + 1}
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                  Question {currentIndex + 1} of {questions.length}
+                </div>
+                {currentQ.topic && (
+                  <span className="px-2.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-black rounded-full border border-blue-200/70 tracking-wide max-w-[280px] truncate">
+                    📌 {currentQ.topic}
+                  </span>
+                )}
               </div>
               <FormattedQuestionText text={currentQ.questionText} size="lg" />
             </div>

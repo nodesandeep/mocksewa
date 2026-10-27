@@ -17,7 +17,7 @@ export async function GET(request, { params }) {
     const chapRes = await turso.execute({
       sql: `SELECT c.*, q.id as quizId, q.title as quizTitle
             FROM chapters c
-            LEFT JOIN quizzes q ON q.chapterId = c.id
+            LEFT JOIN quizzes q ON (q.chapterId = c.id OR q.id = c.quizId)
             WHERE c.id = ?`,
       args: [chapterId]
     });
@@ -28,17 +28,18 @@ export async function GET(request, { params }) {
 
     const chapter = chapRes.rows[0];
     const quizId = chapter.quizId;
+    const maxQs = Math.max(chapter.quizQuestionCount || 50, 100);
 
     // 2. Fetch questions: First try quizId, if none fallback to course/subject questions
     let questions = [];
     if (quizId) {
       const qRes = await turso.execute({
-        sql: `SELECT q.id, q.questionText, q.options, qm.correctOptionIndex, qm.explanationText
+        sql: `SELECT q.id, q.questionText, q.options, q.topic, qm.correctOptionIndex, qm.explanationText
               FROM questions q
               LEFT JOIN question_metadata qm ON q.id = qm.id
               WHERE q.quizId = ?
               LIMIT ?`,
-        args: [quizId, chapter.quizQuestionCount || 15]
+        args: [quizId, maxQs]
       });
       questions = qRes.rows;
     }
@@ -46,13 +47,13 @@ export async function GET(request, { params }) {
     // Fallback: If no quiz or no questions in quiz, pull questions from course to practice
     if (questions.length === 0) {
       const fallbackRes = await turso.execute({
-        sql: `SELECT q.id, q.questionText, q.options, qm.correctOptionIndex, qm.explanationText
+        sql: `SELECT q.id, q.questionText, q.options, q.topic, qm.correctOptionIndex, qm.explanationText
               FROM questions q
               LEFT JOIN question_metadata qm ON q.id = qm.id
               WHERE q.courseId = ?
               ORDER BY RANDOM()
               LIMIT ?`,
-        args: [courseId, chapter.quizQuestionCount || 15]
+        args: [courseId, maxQs]
       });
       questions = fallbackRes.rows;
     }
@@ -61,6 +62,7 @@ export async function GET(request, { params }) {
     const parsedQuestions = questions.map(q => ({
       id: q.id,
       questionText: q.questionText,
+      topic: q.topic || '',
       options: typeof q.options === 'string' ? JSON.parse(q.options) : q.options,
       correctOptionIndex: q.correctOptionIndex ?? 0,
       explanationText: q.explanationText || 'Refer to the chapter notes for comprehensive conceptual clarity.'

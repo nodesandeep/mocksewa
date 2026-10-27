@@ -1,13 +1,13 @@
 'use client';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { auth } from '@/utils/firebase';
-import MarkdownNotesViewer from '@/components/MarkdownNotesViewer';
+import MarkdownNotesViewer, { parseTopicsAndSlides } from '@/components/MarkdownNotesViewer';
 import { parseOfflineHtmlFile } from '@/utils/htmlToNotesMarkdown';
 import Papa from 'papaparse';
 import { 
   BookOpen, Plus, Trash2, Edit3, Save, X, 
   CheckCircle2, Compass, Layers, Eye, Code, HelpCircle, Upload, FileText, ExternalLink,
-  ChevronUp, ChevronDown, ListOrdered, Sparkles, AlertTriangle
+  ChevronUp, ChevronDown, ListOrdered, Sparkles, AlertTriangle, FileSpreadsheet, Download, Check
 } from 'lucide-react';
 
 export default function ChapterManager() {
@@ -19,12 +19,20 @@ export default function ChapterManager() {
   const [saving, setSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  // CSV Question Import State
+  // CSV Question Import State (Table Modal)
   const [showImportModal, setShowImportModal] = useState(false);
   const [importTargetChapter, setImportTargetChapter] = useState(null);
   const [importing, setImporting] = useState(false);
   const [parsedRows, setParsedRows] = useState([]);
   const [importLog, setImportLog] = useState('');
+
+  // Modal In-Place CSV Questions & Topic Alignment State
+  const [modalCsvQuestions, setModalCsvQuestions] = useState([]);
+  const [modalCsvStats, setModalCsvStats] = useState(null);
+  const [csvNotice, setCsvNotice] = useState('');
+  const [showQuizSelector, setShowQuizSelector] = useState(false);
+  const modalCsvFileRef = useRef(null);
+
   const [editorTab, setEditorTab] = useState('write'); // 'write' | 'preview'
   const [formData, setFormData] = useState({
     id: '',
@@ -82,6 +90,135 @@ export default function ChapterManager() {
       alert('Failed to read the selected file.');
     };
     reader.readAsText(file);
+  };
+
+  // Derive Note Topics from Markdown Reading Material
+  const noteTopics = useMemo(() => {
+    return parseTopicsAndSlides(formData.readingMaterial || '');
+  }, [formData.readingMaterial]);
+
+  // Align CSV Questions with Detected Topics
+  const alignmentChips = useMemo(() => {
+    if (modalCsvQuestions.length === 0 && noteTopics.length === 0) return [];
+
+    if (noteTopics.length > 0) {
+      return noteTopics.map((nt, idx) => {
+        const topicNum = nt.number || (idx + 1);
+        const titleLower = (nt.title || '').toLowerCase().trim();
+
+        const count = modalCsvQuestions.filter(q => {
+          const qTopic = (q.topic || '').toLowerCase().trim();
+          if (!qTopic) return false;
+          if (
+            qTopic === String(topicNum) ||
+            qTopic === `topic ${topicNum}` ||
+            qTopic === `topic${topicNum}` ||
+            qTopic.startsWith(`topic ${topicNum}:`) ||
+            qTopic.startsWith(`topic ${topicNum} -`) ||
+            qTopic.startsWith(`${topicNum}.`)
+          ) return true;
+          if (titleLower.length > 3 && (qTopic.includes(titleLower) || titleLower.includes(qTopic))) return true;
+          return false;
+        }).length;
+
+        return {
+          label: `Topic ${topicNum}: ${nt.title?.slice(0, 26)}${nt.title?.length > 26 ? '...' : ''}`,
+          count
+        };
+      });
+    }
+
+    if (modalCsvStats?.topicBreakdown?.length > 0) {
+      return modalCsvStats.topicBreakdown.map(tb => ({
+        label: tb.topic?.slice(0, 28) + (tb.topic?.length > 28 ? '...' : ''),
+        count: tb.count
+      }));
+    }
+
+    return [];
+  }, [modalCsvQuestions, noteTopics, modalCsvStats]);
+
+  const handleModalCsvParse = (file) => {
+    if (!file) return;
+
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        const rows = results.data;
+        const valid = [];
+        const topicCounts = {};
+
+        rows.forEach((r) => {
+          const qText = (r.Question || r.question || r.questionText || r['Question Text'] || r.qText || '').toString().trim();
+          const optA = (r['Option A'] || r.A || r.optA || r.optionA || r['Option 1'] || r.OptionA || '').toString().trim();
+          const optB = (r['Option B'] || r.B || r.optB || r.optionB || r['Option 2'] || r.OptionB || '').toString().trim();
+          const optC = (r['Option C'] || r.C || r.optC || r.optionC || r['Option 3'] || r.OptionC || '').toString().trim();
+          const optD = (r['Option D'] || r.D || r.optD || r.optionD || r['Option 4'] || r.OptionD || '').toString().trim();
+
+          const rawAnswer = (r['Correct Answer'] || r.Correct || r.correct || r.Answer || r.answer || r.correctOptionIndex || 'A').toString().trim();
+          const rationale = (r.Rationale || r.rationale || r.Explanation || r.explanation || '').toString().trim();
+          const topicRaw = (r.Topic || r.topic || r.Section || r.section || r.Chapter || r.chapter || formData.title || 'Chapter Practice').toString().trim();
+
+          if (qText && optA && optB) {
+            const letterToIdx = { 'A': 0, 'B': 1, 'C': 2, 'D': 3, '1': 0, '2': 1, '3': 2, '4': 3 };
+            let correctIndex = letterToIdx[rawAnswer.toUpperCase()];
+            if (correctIndex === undefined) {
+              const opts = [optA, optB, optC, optD];
+              const matchIdx = opts.findIndex(o => o.toLowerCase() === rawAnswer.toLowerCase());
+              correctIndex = matchIdx !== -1 ? matchIdx : 0;
+            }
+
+            const cleanOptions = [optA, optB, optC || '', optD || ''].filter(Boolean);
+            valid.push({
+              questionText: qText,
+              options: cleanOptions,
+              correctOptionIndex: correctIndex,
+              explanationText: rationale,
+              topic: topicRaw
+            });
+
+            topicCounts[topicRaw] = (topicCounts[topicRaw] || 0) + 1;
+          }
+        });
+
+        if (valid.length === 0) {
+          alert('Could not find valid questions. Ensure CSV has Question, Option A, Option B, and Correct Answer columns.');
+          return;
+        }
+
+        const breakdown = Object.entries(topicCounts).map(([topic, count]) => ({ topic, count }));
+        setModalCsvQuestions(valid);
+        setModalCsvStats({
+          totalCount: valid.length,
+          topicsCount: breakdown.length,
+          topicBreakdown: breakdown,
+          fileName: file.name
+        });
+        setFormData(prev => ({
+          ...prev,
+          quizQuestionCount: valid.length
+        }));
+        setCsvNotice(`✓ Parsed ${valid.length} questions from ${file.name} across ${breakdown.length} topic sections.`);
+      },
+      error: (err) => {
+        alert('CSV Parse Error: ' + err.message);
+      }
+    });
+  };
+
+  const handleDownloadSampleCsv = () => {
+    const csvContent = "data:text/csv;charset=utf-8," + encodeURIComponent(
+      "Topic,Question,Option A,Option B,Option C,Option D,Correct Answer,Explanation\n" +
+      "Topic 1: Geography,What is the total area of Nepal?,147181 sq km,147516 sq km,147211 sq km,146000 sq km,147516 sq km,As per updated map including Limpiyadhura.\n" +
+      "Topic 2: Hydrology,Which is the longest river of Nepal?,Koshi,Gandaki,Karnali,Mahakali,Karnali,Karnali river is the longest river in Nepal with 507 km length.\n"
+    );
+    const link = document.createElement("a");
+    link.setAttribute("href", csvContent);
+    link.setAttribute("download", "mocksewa_chapter_practice_template.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   // Load Courses
@@ -143,6 +280,10 @@ export default function ChapterManager() {
 
   const handleOpenAdd = () => {
     setImportNotice('');
+    setCsvNotice('');
+    setModalCsvQuestions([]);
+    setModalCsvStats(null);
+    setShowQuizSelector(false);
     setFormData({
       id: '',
       title: '',
@@ -160,6 +301,10 @@ export default function ChapterManager() {
 
   const handleOpenEdit = (chap) => {
     setImportNotice('');
+    setCsvNotice('');
+    setModalCsvQuestions([]);
+    setModalCsvStats(null);
+    setShowQuizSelector(false);
     setFormData({
       id: chap.id,
       title: chap.title || '',
@@ -325,6 +470,43 @@ export default function ChapterManager() {
     setSaving(true);
     try {
       const token = await auth.currentUser?.getIdToken();
+
+      let targetQuizId = formData.quizId;
+
+      // If CSV questions were uploaded in this modal, make sure a quiz exists to receive them
+      if (modalCsvQuestions.length > 0 && !targetQuizId) {
+        const createQuizRes = await fetch('/api/admin/content', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({
+            type: 'quiz',
+            action: 'save',
+            data: {
+              title: `${formData.title} - Chapter Practice`,
+              courseId: selectedCourseId,
+              subjectId: formData.subjectId || '',
+              quizType: 'CHAPTER_TEST',
+              timeLimit: 20,
+              enabled: true
+            }
+          })
+        });
+        if (createQuizRes.ok) {
+          const quizCreated = await createQuizRes.json();
+          targetQuizId = quizCreated.id;
+        }
+      }
+
+      const chapterDataToSave = {
+        ...formData,
+        quizId: targetQuizId || formData.quizId,
+        quizQuestionCount: modalCsvQuestions.length > 0 ? modalCsvQuestions.length : (formData.quizQuestionCount || 15),
+        courseId: selectedCourseId
+      };
+
       const res = await fetch('/api/admin/content', {
         method: 'POST',
         headers: {
@@ -334,27 +516,85 @@ export default function ChapterManager() {
         body: JSON.stringify({
           type: 'chapter',
           action: 'save',
-          data: {
-            ...formData,
-            courseId: selectedCourseId
-          }
+          data: chapterDataToSave
         })
       });
 
-      if (res.ok) {
-        setIsEditing(false);
-        // Refresh list
-        const refresh = await fetch(`/api/admin/content?type=chapters&courseId=${selectedCourseId}`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {}
+      if (!res.ok) {
+        throw new Error('Failed to save chapter.');
+      }
+
+      const savedData = await res.json();
+      const finalChapterId = formData.id || savedData.id;
+
+      // If CSV questions were uploaded, link quiz and bulk insert questions
+      if (modalCsvQuestions.length > 0 && targetQuizId) {
+        // Link quiz to chapter
+        await fetch('/api/admin/content', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({
+            type: 'quiz',
+            action: 'save',
+            data: {
+              id: targetQuizId,
+              chapterId: finalChapterId,
+              title: `${formData.title} - Chapter Practice`,
+              courseId: selectedCourseId
+            }
+          })
         });
-        const updated = await refresh.json();
-        setChapters(updated);
-      } else {
-        alert('Failed to save chapter.');
+
+        // Bulk insert questions
+        const questionsWithTarget = modalCsvQuestions.map(q => ({
+          ...q,
+          quizId: targetQuizId,
+          courseId: selectedCourseId,
+          chapterId: finalChapterId,
+          subjectId: formData.subjectId || ''
+        }));
+
+        await fetch('/api/admin/content', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({
+            type: 'questions_bulk',
+            action: 'save',
+            data: { questions: questionsWithTarget }
+          })
+        });
+      }
+
+      setIsEditing(false);
+      const importedCount = modalCsvQuestions.length;
+      setModalCsvQuestions([]);
+      setModalCsvStats(null);
+      setCsvNotice('');
+
+      // Refresh list
+      const [chapRes, quizRes] = await Promise.all([
+        fetch(`/api/admin/content?type=chapters&courseId=${selectedCourseId}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        }),
+        fetch(`/api/admin/content?type=quizzes&courseId=${selectedCourseId}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        })
+      ]);
+      if (chapRes.ok) setChapters(await chapRes.json());
+      if (quizRes.ok) setQuizzes(await quizRes.json());
+
+      if (importedCount > 0) {
+        alert(`Successfully saved Chapter & imported ${importedCount} practice questions aligned with topics!`);
       }
     } catch (err) {
       console.error('Error saving chapter:', err);
-      alert('Network error saving chapter.');
+      alert('Network error saving chapter: ' + err.message);
     } finally {
       setSaving(false);
     }
@@ -858,55 +1098,66 @@ export default function ChapterManager() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Link Practice Quiz</label>
-                  <select
-                    value={formData.quizId}
-                    onChange={(e) => setFormData({ ...formData, quizId: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                  >
-                    <option value="">-- Select Quiz --</option>
-                    {quizzes.map((q) => (
-                      <option key={q.id} value={q.id}>
-                        {q.title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* 📥 Offline HTML & MD File Importer Banner */}
-              <div className="p-4 bg-gradient-to-r from-blue-50/90 via-indigo-50/50 to-white rounded-2xl border border-blue-200/90 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-blue-500/20">
-                    <Upload className="w-5 h-5" />
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                      Practice Quiz & Questions (.csv)
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowQuizSelector(!showQuizSelector)}
+                      className="text-[10px] font-black text-blue-600 hover:text-blue-800 underline cursor-pointer"
+                    >
+                      {showQuizSelector ? '← Upload CSV' : 'Select Quiz'}
+                    </button>
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-black text-slate-900">Upload Offline Note File (.html / .md)</span>
-                      <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-black rounded-md uppercase tracking-wider">Auto-Parser</span>
-                    </div>
-                    <p className="text-[11px] text-slate-500 font-medium">
-                      Directly upload your offline HTML file exported from VidyaPDF or myMOCKsewa. Auto-extracts Chapter Title, Topics, and Slides.
-                    </p>
-                  </div>
-                </div>
 
-                <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="px-4 py-2 bg-white hover:bg-blue-600 hover:text-white text-blue-700 font-bold rounded-xl border border-blue-200 shadow-2xs text-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 whitespace-nowrap"
-                  >
-                    <FileText className="w-3.5 h-3.5" />
-                    <span>Choose Offline File</span>
-                  </button>
+                  {!showQuizSelector ? (
+                    <button
+                      type="button"
+                      onClick={() => modalCsvFileRef.current?.click()}
+                      className={`w-full px-4 py-2.5 rounded-xl border text-xs font-bold flex items-center justify-between gap-2 transition-all cursor-pointer shadow-2xs active:scale-98 ${
+                        modalCsvQuestions.length > 0 
+                          ? 'bg-emerald-50 border-emerald-300 text-emerald-900' 
+                          : formData.quizId
+                            ? 'bg-blue-50/80 border-blue-200 text-blue-900'
+                            : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 truncate">
+                        <FileSpreadsheet className={`w-3.5 h-3.5 shrink-0 ${modalCsvQuestions.length > 0 ? 'text-emerald-600' : 'text-blue-600'}`} />
+                        <span className="truncate">
+                          {modalCsvQuestions.length > 0 
+                            ? `✓ ${modalCsvQuestions.length} Qs from CSV` 
+                            : formData.quizId 
+                              ? (quizzes.find(q => q.id === formData.quizId)?.title || 'Linked Quiz') 
+                              : 'Upload Questions CSV'}
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-black uppercase tracking-wider bg-white/80 px-2 py-0.5 rounded-md border border-slate-200/60 shadow-2xs shrink-0">
+                        {modalCsvQuestions.length > 0 ? 'Ready' : 'Choose CSV'}
+                      </span>
+                    </button>
+                  ) : (
+                    <select
+                      value={formData.quizId}
+                      onChange={(e) => setFormData({ ...formData, quizId: e.target.value })}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                    >
+                      <option value="">-- Select Quiz --</option>
+                      {quizzes.map((q) => (
+                        <option key={q.id} value={q.id}>
+                          {q.title} ({q.questionCount || 0} Qs)
+                        </option>
+                      ))}
+                    </select>
+                  )}
                   <input
-                    ref={fileInputRef}
+                    ref={modalCsvFileRef}
                     type="file"
-                    accept=".html,.htm,.md,.txt"
+                    accept=".csv"
                     onChange={(e) => {
                       if (e.target.files?.[0]) {
-                        handleFileImport(e.target.files[0]);
+                        handleModalCsvParse(e.target.files[0]);
                         e.target.value = '';
                       }
                     }}
@@ -915,11 +1166,156 @@ export default function ChapterManager() {
                 </div>
               </div>
 
+              {/* 📥 Dual Uploader Banners (Notes & Practice Questions) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Card 1: Offline HTML & MD Notes */}
+                <div className="p-4 bg-gradient-to-br from-blue-50/90 via-indigo-50/40 to-white rounded-2xl border border-blue-200/90 flex flex-col justify-between gap-3 shadow-2xs">
+                  <div className="flex items-start gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-blue-500/20">
+                      <BookOpen className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-black text-slate-900">1. Offline Notes (.html / .md)</span>
+                        <span className="px-1.5 py-0.2 bg-blue-100 text-blue-800 text-[9px] font-black rounded uppercase tracking-wider">Auto-Parser</span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 font-medium leading-relaxed mt-0.5">
+                        Exported from VidyaPDF or myMOCKsewa. Auto-extracts Chapter Title, Topics, and Slides.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 pt-1 border-t border-blue-100/60">
+                    <span className="text-[10px] font-bold text-slate-500">
+                      {noteTopics.length > 0 ? `${noteTopics.length} Topics Detected` : 'No file uploaded yet'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="px-3.5 py-1.5 bg-white hover:bg-blue-600 hover:text-white text-blue-700 font-bold rounded-xl border border-blue-200 shadow-2xs text-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                      <span>Choose Notes</span>
+                    </button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".html,.htm,.md,.txt"
+                      onChange={(e) => {
+                        if (e.target.files?.[0]) {
+                          handleFileImport(e.target.files[0]);
+                          e.target.value = '';
+                        }
+                      }}
+                      className="hidden"
+                    />
+                  </div>
+                </div>
+
+                {/* Card 2: Chapter Questions CSV */}
+                <div className="p-4 bg-gradient-to-br from-emerald-50/90 via-teal-50/40 to-white rounded-2xl border border-emerald-200/90 flex flex-col justify-between gap-3 shadow-2xs">
+                  <div className="flex items-start gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-500/20">
+                      <FileSpreadsheet className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-black text-slate-900">2. Practice Questions (.csv)</span>
+                        <span className="px-1.5 py-0.2 bg-emerald-100 text-emerald-800 text-[9px] font-black rounded uppercase tracking-wider">Topic Aligner</span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 font-medium leading-relaxed mt-0.5">
+                        CSV questions with Question, Options A-D, Correct, and Topic to align with notes.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 pt-1 border-t border-emerald-100/60">
+                    <button
+                      type="button"
+                      onClick={handleDownloadSampleCsv}
+                      className="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 flex items-center gap-1 underline cursor-pointer"
+                      title="Download sample CSV template"
+                    >
+                      <Download className="w-3 h-3" /> Sample CSV
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => modalCsvFileRef.current?.click()}
+                      className="px-3.5 py-1.5 bg-white hover:bg-emerald-600 hover:text-white text-emerald-700 font-bold rounded-xl border border-emerald-200 shadow-2xs text-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>Choose CSV</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* 🎯 Curriculum & Practice Questions Topic Alignment Banner */}
+              {(modalCsvQuestions.length > 0 || noteTopics.length > 0) && (
+                <div className="p-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl border border-indigo-800/50 shadow-md space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black text-xs">
+                        ✓
+                      </div>
+                      <span className="text-xs font-black tracking-wide">
+                        Curriculum Topics & Questions Alignment Matrix
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-[11px] font-bold">
+                      <span className="px-2.5 py-0.5 bg-blue-500/30 text-blue-200 rounded-full border border-blue-400/30">
+                        {noteTopics.length} Note Topics
+                      </span>
+                      <span className="text-slate-400">•</span>
+                      <span className="px-2.5 py-0.5 bg-emerald-500/30 text-emerald-200 rounded-full border border-emerald-400/30">
+                        {modalCsvQuestions.length > 0 
+                          ? `${modalCsvQuestions.length} Questions Loaded` 
+                          : `${formData.quizQuestionCount || 0} Questions Current`}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Alignment Pills */}
+                  {alignmentChips.length > 0 ? (
+                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                      {alignmentChips.map((chip, idx) => (
+                        <div
+                          key={idx}
+                          className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 hover:bg-white/15 border border-white/10 rounded-xl text-xs font-semibold backdrop-blur-xs transition-colors"
+                        >
+                          <span className="text-slate-200">{chip.label}</span>
+                          <span className={`px-2 py-0.2 rounded-md text-[10px] font-black ${
+                            chip.count > 0 
+                              ? 'bg-emerald-500/30 text-emerald-300 border border-emerald-400/30' 
+                              : 'bg-slate-700/50 text-slate-400'
+                          }`}>
+                            {chip.count > 0 ? `${chip.count} Qs` : '0 Qs'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-slate-400">
+                      Upload both notes (.html / .md) and practice questions (.csv) to see automatic topic-by-topic question alignment.
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* Import Notification Banner */}
               {importNotice && (
+                <div className="p-3.5 bg-blue-50 border border-blue-200 text-blue-900 rounded-xl text-xs font-bold flex items-center gap-2 animate-in fade-in duration-300">
+                  <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
+                  <span>{importNotice}</span>
+                </div>
+              )}
+
+              {/* CSV Notification Banner */}
+              {csvNotice && (
                 <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-xl text-xs font-bold flex items-center gap-2 animate-in fade-in duration-300">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>{importNotice}</span>
+                  <span>{csvNotice}</span>
                 </div>
               )}
 
@@ -1075,7 +1471,7 @@ export default function ChapterManager() {
                   className="px-8 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-blue-500/25 active:scale-95 transition-all cursor-pointer"
                 >
                   <Save className="w-4 h-4" />
-                  <span>{saving ? 'Saving...' : 'Save Chapter'}</span>
+                  <span>{saving ? 'Saving...' : (modalCsvQuestions.length > 0 ? `Save Chapter & Import ${modalCsvQuestions.length} Qs` : 'Save Chapter & Notes')}</span>
                 </button>
               </div>
             </form>
