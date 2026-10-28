@@ -8,7 +8,8 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 import Logo from '@/components/Logo';
-import { formatNotesMarkdown } from '@/components/MarkdownNotesViewer';
+import PageLoader from '@/components/PageLoader';
+import { formatNotesMarkdown, renderCalloutCard, extractTextFromReactNode } from '@/components/MarkdownNotesViewer';
 import { 
   BookOpen, Printer, ArrowLeft, Clock, 
   List, Layers, ExternalLink, Bookmark, CheckCircle2,
@@ -67,18 +68,7 @@ export default function MasterNotesPage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center space-y-4">
-        <div className="relative">
-          <div className="w-14 h-14 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
-          <BookOpen className="w-6 h-6 text-blue-400 absolute inset-0 m-auto animate-pulse" />
-        </div>
-        <div className="text-center space-y-1">
-          <p className="text-white text-xs font-black tracking-widest uppercase">Compiling Master Handbook...</p>
-          <p className="text-xs text-slate-400 font-medium">Rendering KaTeX formulas, tables, and curriculum notes</p>
-        </div>
-      </div>
-    );
+    return <PageLoader />;
   }
 
   const filteredChapters = chapters.filter(chap => 
@@ -135,15 +125,6 @@ export default function MasterNotesPage() {
             >
               <Compass className="w-3.5 h-3.5 text-blue-600" />
               <span className="hidden sm:inline">Guided Path</span>
-            </Link>
-
-            <Link
-              href={`/courses/${courseId}/cheat-sheet`}
-              className="px-3.5 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold rounded-xl transition-all border border-amber-200/80 flex items-center gap-1.5 active:scale-95"
-              title="View your personal highlighted points"
-            >
-              <Bookmark className="w-3.5 h-3.5 text-amber-600" />
-              <span className="hidden sm:inline">Cheat-Sheet</span>
             </Link>
 
             <button
@@ -348,12 +329,34 @@ export default function MasterNotesPage() {
                           </h3>
                         );
                       },
-                      blockquote: ({ node, ...props }) => (
-                        <blockquote 
-                          className="my-6 p-4 md:p-5 bg-gradient-to-r from-blue-50/80 to-indigo-50/30 border-l-4 border-blue-600 rounded-r-2xl text-slate-800 font-medium not-italic shadow-2xs leading-relaxed" 
-                          {...props} 
-                        />
+                      p: ({ node, children, ...props }) => (
+                        <p className="my-3.5 text-slate-700 leading-[1.85] text-base md:text-[16px] font-normal text-left" {...props}>
+                          {children}
+                        </p>
                       ),
+                      li: ({ node, children, ...props }) => (
+                        <li className="my-2.5 text-slate-800 text-sm md:text-base leading-[1.75] list-none pl-0 flex items-start gap-2.5 text-left" {...props}>
+                          <span className="flex-1 text-left">{children}</span>
+                        </li>
+                      ),
+                      blockquote: ({ node, children, ...props }) => {
+                        const rawText = extractTextFromReactNode(children);
+
+                        if (rawText.includes('सूत्र') || rawText.includes('सुत्र')) return renderCalloutCard('mnemonic', children);
+                        if (rawText.includes('स्मरण रहोस्') || rawText.includes('Exam Alert')) return renderCalloutCard('examAlert', children);
+                        if (rawText.includes('स्रोत विमति') || rawText.includes('स्पष्टीकरण')) return renderCalloutCard('clarification', children);
+                        if (rawText.includes('गहन सन्दर्भ') || rawText.includes('विषयवस्तु विस्तार')) return renderCalloutCard('deepDive', children);
+                        if (rawText.includes('विगत परीक्षा') || rawText.includes('प्रश्न विश्लेषण')) return renderCalloutCard('pastAnalysis', children);
+
+                        return (
+                          <blockquote 
+                            className="my-5 p-4 md:p-5 bg-gradient-to-r from-blue-50/80 to-indigo-50/30 border-l-4 border-blue-600 rounded-r-2xl text-slate-800 font-medium not-italic shadow-2xs leading-relaxed text-left" 
+                            {...props}
+                          >
+                            {children}
+                          </blockquote>
+                        );
+                      },
                       img: ({ node, ...props }) => (
                         <img
                           {...props}

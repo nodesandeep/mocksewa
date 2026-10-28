@@ -814,7 +814,7 @@ export default function ChapterManager() {
                 className="px-3 py-2.5 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all"
                 title="Preview Master Handbook Notes"
               >
-                <BookOpen className="w-3.5 h-3.5" /> Master Notes <ExternalLink className="w-3 h-3" />
+                <BookOpen className="w-3.5 h-3.5" /> Preview Notes <ExternalLink className="w-3 h-3" />
               </a>
             </div>
           )}

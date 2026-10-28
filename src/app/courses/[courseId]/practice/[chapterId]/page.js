@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { auth } from '@/utils/firebase';
 import Logo from '@/components/Logo';
+import PageLoader from '@/components/PageLoader';
 import BrandName from '@/components/BrandName';
 import { 
   CheckCircle2, XCircle, ArrowRight, ArrowLeft, 
@@ -118,12 +119,7 @@ export default function ChapterPracticePage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center space-y-4">
-        <div className="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
-        <p className="text-white text-xs font-bold tracking-widest uppercase">Preparing Practice Questions...</p>
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (questions.length === 0) {

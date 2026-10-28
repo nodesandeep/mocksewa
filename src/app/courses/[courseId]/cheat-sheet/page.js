@@ -4,6 +4,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { auth } from '@/utils/firebase';
 import Logo from '@/components/Logo';
+import PageLoader from '@/components/PageLoader';
 import BrandName from '@/components/BrandName';
 import { 
   Bookmark, Trash2, ArrowLeft, Highlighter, 
@@ -58,12 +59,7 @@ export default function CheatSheetPage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center space-y-4">
-        <div className="w-12 h-12 border-4 border-yellow-500/20 border-t-yellow-500 rounded-full animate-spin"></div>
-        <p className="text-white text-xs font-bold tracking-widest uppercase">Loading Your Cheat-Sheet...</p>
-      </div>
-    );
+    return <PageLoader />;
   }
 
   return (

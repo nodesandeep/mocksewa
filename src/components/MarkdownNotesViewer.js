@@ -15,38 +15,65 @@ import { auth } from '@/utils/firebase';
 
 export function formatNotesMarkdown(raw) {
   if (!raw) return '';
-  let text = raw;
+  let text = String(raw);
 
-  // Normalize Windows CRLF to LF
+  // 1. Normalize Windows CRLF to LF
   text = text.replace(/\r\n/g, '\n');
 
-  // Convert legacy ☆ ☆ to clean markdown bullet with star
+  // 2. Strip unwanted repeated branding / watermark boilerplate
+  text = text.replace(/my\s*MOCK\s*sewa[\s\S]*?Precision Practice, Proven Success\.?/gi, '');
+  text = text.replace(/(?:^|\n)\s*my\s*MOCK\s*sewa\s*(?:\n|$)/gi, '\n');
+  text = text.replace(/(?:^|\n)\s*Precision Practice, Proven Success\.?\s*(?:\n|$)/gi, '\n');
+
+  // 3. Strip stray PDF / HTML page numbers (e.g. standalone "2", "3" between topics)
+  text = text.replace(/(?:^|\n)\s*([0-9]{1,2})\s*(?=\n\n|\n[#\-])/g, '\n');
+
+  // 4. Strip duplicate leading chapter title if present at the very beginning of the notes
+  text = text.replace(/^\s*(?:#+\s*)?(?:Chapter\s*\d+(?:\.\d+)?[^\n]+)\n+/i, '');
+
+  // 5. Convert legacy ☆ or star characters to standard - ⭐ bullet
   text = text.replace(/☆\s*☆\s*/g, '\n- ⭐ ');
   text = text.replace(/☆\s*➤\s*/g, '\n  - ➤ ');
   text = text.replace(/(?<![-*]\s*)➤\s*/g, '\n  - ➤ ');
 
-  // Convert any callout blocks (with or without bold asterisks, with or without blockquotes) into standard blockquotes
-  const blocks = text.split(/\n\s*\n/);
-  text = blocks.map(block => {
-    const trimmed = block.trim();
-    if (!trimmed) return '';
+  // 6. Unify Callout Blocks into contiguous Blockquotes (merging orphaned explanation paragraphs)
+  const rawBlocks = text.split(/\n\s*\n/);
+  const processedBlocks = [];
 
-    const isMnemonic = /(?:^|\n)\s*(?:>\s*)?\*{0,2}(?:सूत्र|सुत्र)/i.test(trimmed);
-    const isExamAlert = /(?:^|\n)\s*(?:>\s*)?\*{0,2}[⚠⚠️]?\s*स्मरण रहोस्/i.test(trimmed);
-    const isClarification = /(?:^|\n)\s*(?:>\s*)?\*{0,2}स्रोत विमति/i.test(trimmed);
-    const isDeepDive = /(?:^|\n)\s*(?:>\s*)?\*{0,2}गहन सन्दर्भ/i.test(trimmed);
-    const isPastAnalysis = /(?:^|\n)\s*(?:>\s*)?\*{0,2}विगत परीक्षा/i.test(trimmed);
+  for (let i = 0; i < rawBlocks.length; i++) {
+    const current = rawBlocks[i].trim();
+    if (!current) continue;
 
-    if (isMnemonic || isExamAlert || isClarification || isDeepDive || isPastAnalysis) {
-      const lines = trimmed.split('\n').map(l => {
-        const cleanL = l.replace(/^>\s*/, '').trim();
-        return cleanL ? `> ${cleanL}` : '>';
-      }).join('\n');
-      return lines;
+    const isCallout = /(?:सूत्र|सुत्र|स्मरण रहोस्|Exam Alert|स्रोत विमति|स्पष्टीकरण|गहन सन्दर्भ|विषयवस्तु विस्तार|विगत परीक्षा|प्रश्न विश्लेषण)/i.test(current);
+
+    if (isCallout) {
+      let calloutLines = current.split('\n').map(l => l.replace(/^>\s*/, '').trim()).filter(Boolean);
+
+      // Check if subsequent blocks belong to this callout as explanation / detail
+      while (i + 1 < rawBlocks.length) {
+        const next = rawBlocks[i + 1].trim();
+        const isNextHeading = /^#{1,6}\s/i.test(next) || /^TOPIC\s/i.test(next) || /^---\s*$/i.test(next);
+        const isNextCallout = /(?:सूत्र|सुत्र|स्मरण रहोस्|Exam Alert|स्रोत विमति|स्पष्टीकरण|गहन सन्दर्भ|विषयवस्तु विस्तार|विगत परीक्षा|प्रश्न विश्लेषण)/i.test(next);
+        const isNextList = /^[-*]\s/i.test(next);
+        const isNextTable = /^\|/i.test(next);
+
+        // If next block is plain text (e.g., "उ (उष्ण)..." or "मूल स्रोत: ४४.७४ प्रतिशत..."), it belongs inside this callout card
+        if (next && !isNextHeading && !isNextCallout && !isNextList && !isNextTable && next.length < 600) {
+          const nextLines = next.split('\n').map(l => l.replace(/^>\s*/, '').trim()).filter(Boolean);
+          calloutLines = calloutLines.concat(nextLines);
+          i++; // consumed next block
+        } else {
+          break;
+        }
+      }
+
+      processedBlocks.push(calloutLines.map(l => '> ' + l).join('\n'));
+    } else {
+      processedBlocks.push(current);
     }
+  }
 
-    return block;
-  }).filter(Boolean).join('\n\n');
+  text = processedBlocks.join('\n\n');
 
   // Strip duplicate heading hashes like "## ## " or "### ### "
   text = text.replace(/^(#{1,6})\s*(?:#{1,6}\s*)+/gm, '$1 ');
@@ -60,10 +87,10 @@ export function formatNotesMarkdown(raw) {
   // Clean any accidental leftover "## ## "
   text = text.replace(/(?:^|\n)##\s+##\s+/g, '\n\n## ');
 
-  // Ensure consecutive list items don't merge: convert single linebreaks into double or break
-  text = text.replace(/\n(- [^\n]+)/g, '\n\n$1');
+  // Collapse multiple blank lines
+  text = text.replace(/\n{3,}/g, '\n\n');
 
-  return text;
+  return text.trim();
 }
 
 export function parseTopicsAndSlides(raw) {
@@ -167,7 +194,7 @@ export function parseTopicsAndSlides(raw) {
   ];
 }
 
-function extractTextFromReactNode(node) {
+export function extractTextFromReactNode(node) {
   if (!node) return '';
   if (typeof node === 'string' || typeof node === 'number') return String(node);
   if (Array.isArray(node)) return node.map(extractTextFromReactNode).join(' ');
@@ -175,51 +202,51 @@ function extractTextFromReactNode(node) {
   return '';
 }
 
-function renderCalloutCard(type, children) {
+export function renderCalloutCard(type, children) {
   switch (type) {
     case 'mnemonic':
       return (
-        <div className="my-5 p-4 md:p-5 bg-gradient-to-r from-purple-50/90 to-indigo-50/40 border-l-4 border-purple-600 rounded-r-2xl shadow-xs space-y-1.5 border border-purple-200/80">
+        <div className="my-5 p-4 md:p-5 bg-gradient-to-r from-purple-50/90 to-indigo-50/40 border-l-4 border-purple-600 rounded-r-2xl shadow-xs space-y-2 border border-purple-200/80 text-left">
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-purple-600 text-white text-[10px] font-black rounded-full uppercase tracking-wider shadow-2xs">
             💡 सूत्र (Mnemonic)
           </div>
-          <div className="text-purple-950 font-bold text-sm leading-relaxed">{children}</div>
+          <div className="text-purple-950 font-bold text-sm md:text-[15px] leading-relaxed text-left">{children}</div>
         </div>
       );
     case 'examAlert':
       return (
-        <div className="my-5 p-4 md:p-5 bg-gradient-to-r from-amber-50/90 to-yellow-50/40 border-l-4 border-amber-500 rounded-r-2xl shadow-xs space-y-1.5 border border-amber-200/80">
+        <div className="my-5 p-4 md:p-5 bg-gradient-to-r from-amber-50/90 to-yellow-50/40 border-l-4 border-amber-500 rounded-r-2xl shadow-xs space-y-2 border border-amber-200/80 text-left">
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-amber-500 text-white text-[10px] font-black rounded-full uppercase tracking-wider shadow-2xs">
             ⚠️ स्मरण रहोस् (Exam Alert)
           </div>
-          <div className="text-amber-950 font-bold text-sm leading-relaxed">{children}</div>
+          <div className="text-amber-950 font-bold text-sm md:text-[15px] leading-relaxed text-left">{children}</div>
         </div>
       );
     case 'clarification':
       return (
-        <div className="my-5 p-4 md:p-5 bg-gradient-to-r from-rose-50/90 to-red-50/30 border-l-4 border-rose-500 rounded-r-2xl shadow-xs space-y-1.5 border border-rose-200/80">
+        <div className="my-5 p-4 md:p-5 bg-gradient-to-r from-rose-50/90 to-red-50/30 border-l-4 border-rose-500 rounded-r-2xl shadow-xs space-y-2 border border-rose-200/80 text-left">
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-rose-500 text-white text-[10px] font-black rounded-full uppercase tracking-wider shadow-2xs">
             📌 स्रोत विमति / स्पष्टीकरण
           </div>
-          <div className="text-rose-950 font-medium text-sm leading-relaxed">{children}</div>
+          <div className="text-rose-950 font-medium text-sm md:text-[15px] leading-relaxed text-left">{children}</div>
         </div>
       );
     case 'deepDive':
       return (
-        <div className="my-5 p-4 md:p-5 bg-slate-50 border-l-4 border-slate-600 rounded-r-2xl shadow-xs space-y-1.5 border border-slate-200">
+        <div className="my-5 p-4 md:p-5 bg-slate-50 border-l-4 border-slate-600 rounded-r-2xl shadow-xs space-y-2 border border-slate-200 text-left">
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-slate-700 text-white text-[10px] font-black rounded-full uppercase tracking-wider shadow-2xs">
             📖 गहन सन्दर्भ तथा विषयवस्तु विस्तार
           </div>
-          <div className="text-slate-800 font-medium text-sm leading-relaxed">{children}</div>
+          <div className="text-slate-800 font-medium text-sm md:text-[15px] leading-relaxed text-left">{children}</div>
         </div>
       );
     case 'pastAnalysis':
       return (
-        <div className="my-5 p-4 md:p-5 bg-gradient-to-r from-indigo-50/80 to-blue-50/30 border-l-4 border-indigo-600 rounded-r-2xl shadow-xs space-y-1.5 border border-indigo-200/80">
+        <div className="my-5 p-4 md:p-5 bg-gradient-to-r from-indigo-50/80 to-blue-50/30 border-l-4 border-indigo-600 rounded-r-2xl shadow-xs space-y-2 border border-indigo-200/80 text-left">
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-indigo-600 text-white text-[10px] font-black rounded-full uppercase tracking-wider shadow-2xs">
             🎯 विगत परीक्षा प्रश्न विश्लेषण
           </div>
-          <div className="text-indigo-950 font-medium text-sm leading-relaxed">{children}</div>
+          <div className="text-indigo-950 font-medium text-sm md:text-[15px] leading-relaxed text-left">{children}</div>
         </div>
       );
     default:
@@ -229,13 +256,13 @@ function renderCalloutCard(type, children) {
 
 function MarkdownProse({ markdownText }) {
   return (
-    <div className="max-w-3xl mx-auto prose prose-slate font-sans antialiased text-slate-800 prose-headings:font-black prose-headings:text-slate-900 prose-headings:tracking-tight prose-p:text-slate-700 prose-p:leading-[1.85] prose-p:text-base prose-li:text-slate-700 prose-li:leading-[1.75] prose-strong:text-slate-900 prose-strong:font-black">
+    <div className="max-w-3xl mx-auto prose prose-slate font-sans antialiased text-slate-800 text-left prose-headings:font-black prose-headings:text-slate-900 prose-headings:tracking-tight prose-headings:text-left prose-p:text-slate-700 prose-p:leading-[1.85] prose-p:text-base prose-p:text-left prose-li:text-slate-700 prose-li:leading-[1.75] prose-li:text-left prose-strong:text-slate-900 prose-strong:font-black">
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
         rehypePlugins={[rehypeKatex]}
         components={{
           h1: ({ node, ...props }) => (
-            <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight mt-7 mb-4 pb-2 border-b border-slate-200" {...props} />
+            <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight mt-7 mb-4 pb-2 border-b border-slate-200 text-left" {...props} />
           ),
           h2: ({ node, children, ...props }) => {
             let cleanChildren = children;
@@ -245,7 +272,7 @@ function MarkdownProse({ markdownText }) {
               cleanChildren = [children[0].replace(/^#+\s*/, ''), ...children.slice(1)];
             }
             return (
-              <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight mt-7 mb-3 flex items-center gap-2" {...props}>
+              <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight mt-7 mb-3 flex items-center gap-2 text-left" {...props}>
                 {cleanChildren}
               </h2>
             );
@@ -265,27 +292,24 @@ function MarkdownProse({ markdownText }) {
               cleanChildren = children.replace(/^#+\s*/, '');
             }
             return (
-              <h3 className="text-lg md:text-xl font-bold text-slate-900 mt-6 mb-2" {...props}>
+              <h3 className="text-lg md:text-xl font-bold text-slate-900 mt-6 mb-2 text-left" {...props}>
                 {cleanChildren}
               </h3>
             );
           },
           h4: ({ node, ...props }) => (
-            <h4 className="text-base font-black text-slate-800 mt-5 mb-2 uppercase tracking-wide flex items-center gap-2" {...props} />
+            <h4 className="text-base font-black text-slate-800 mt-5 mb-2 uppercase tracking-wide flex items-center gap-2 text-left" {...props} />
           ),
           p: ({ node, children, ...props }) => {
-            const rawText = extractTextFromReactNode(children);
-            if (rawText.includes('सूत्र') || rawText.includes('सुत्र')) return renderCalloutCard('mnemonic', children);
-            if (rawText.includes('स्मरण रहोस्') || rawText.includes('Exam Alert')) return renderCalloutCard('examAlert', children);
-            if (rawText.includes('स्रोत विमति') || rawText.includes('स्पष्टीकरण')) return renderCalloutCard('clarification', children);
-            if (rawText.includes('गहन सन्दर्भ') || rawText.includes('विषयवस्तु विस्तार')) return renderCalloutCard('deepDive', children);
-            if (rawText.includes('विगत परीक्षा') || rawText.includes('प्रश्न विश्लेषण')) return renderCalloutCard('pastAnalysis', children);
-
-            return <p className="my-3 text-slate-700 leading-[1.85] text-base md:text-[16px] font-normal" {...props}>{children}</p>;
+            return (
+              <p className="my-3.5 text-slate-700 leading-[1.85] text-base md:text-[16px] font-normal text-left" {...props}>
+                {children}
+              </p>
+            );
           },
           li: ({ node, children, ...props }) => (
-            <li className="my-2 text-slate-800 text-sm md:text-base leading-[1.75] list-none pl-0 flex items-start gap-2.5" {...props}>
-              <span className="flex-1">{children}</span>
+            <li className="my-2.5 text-slate-800 text-sm md:text-base leading-[1.75] list-none pl-0 flex items-start gap-2.5 text-left" {...props}>
+              <span className="flex-1 text-left">{children}</span>
             </li>
           ),
           blockquote: ({ node, children, ...props }) => {

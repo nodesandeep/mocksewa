@@ -17,8 +17,9 @@ export function parseOfflineHtmlFile(htmlString, fileName = '') {
     // 1. Remove non-content elements
     const unwantedSelectors = [
       'script', 'style', 'noscript', 'iframe', 'button', 'input', 'form',
-      '.print-button', '.export-banner', '.modal-header', '.no-print',
-      'nav', 'footer', '.watermark-actions'
+      '.print-button', '.print-btn', '.export-banner', '.modal-header', '.no-print',
+      'nav', 'footer', '.watermark-actions', '.watermark-bg', '.watermark',
+      '[class*="watermark"]', '[class*="no-print"]'
     ];
     unwantedSelectors.forEach(sel => {
       doc.querySelectorAll(sel).forEach(el => el.remove());
@@ -55,6 +56,14 @@ export function parseOfflineHtmlFile(htmlString, fileName = '') {
         .trim();
     }
 
+    // Remove the .header-bar element so branding & duplicated chapter title are excluded from body notes
+    const headerBar = doc.querySelector('.header-bar');
+    if (headerBar) {
+      headerBar.remove();
+    } else if (h1) {
+      h1.remove();
+    }
+
     // 3. Locate the main content container if present
     const mainContainer = 
       doc.querySelector('.printable, .content, .notes-container, article, main, #notes-content, .page, body') || 
@@ -77,6 +86,19 @@ export function parseOfflineHtmlFile(htmlString, fileName = '') {
 
     // 6. Post-processing cleanup specifically for Loksewa / VidyaPDF conventions
     md = md.replace(/\r\n/g, '\n');
+
+    // Strip branding boilerplate lines
+    md = md.replace(/my\s*MOCK\s*sewa[\s\S]*?Precision Practice, Proven Success\.?/gi, '');
+    md = md.replace(/(?:^|\n)\s*my\s*MOCK\s*sewa\s*(?:\n|$)/gi, '\n');
+    md = md.replace(/(?:^|\n)\s*Precision Practice, Proven Success\.?\s*(?:\n|$)/gi, '\n');
+    md = md.replace(/(?:^|\n)\s*([0-9]{1,2})\s*(?=\n\n|\n[#\-])/g, '\n');
+
+    // If notes start with duplicated chapter title matching extractedTitle, clean it
+    if (extractedTitle) {
+      const escapedTitle = extractedTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const titleRegex = new RegExp(`^\\s*(?:#+\\s*)?${escapedTitle}\\s*\\n+`, 'i');
+      md = md.replace(titleRegex, '');
+    }
 
     // Convert legacy ☆ or star characters to standard - ⭐ bullet
     md = md.replace(/(?:^|\n)\s*[⭐☆★]\s*/g, '\n- ⭐ ');

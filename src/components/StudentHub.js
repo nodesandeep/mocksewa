@@ -755,15 +755,6 @@ export default function StudentHub() {
                                     ⚡ Mock Exam
                                   </button>
                                 </div>
-                                <div className="flex items-center justify-between text-[10px] font-bold text-textSecondary px-1 pt-1">
-                                  <Link href={`/courses/${course.id}/notes`} className="hover:text-brand transition-colors">
-                                    📖 Master Notes
-                                  </Link>
-                                  <span>•</span>
-                                  <Link href={`/courses/${course.id}/cheat-sheet`} className="hover:text-brand transition-colors">
-                                    📑 Revision Sheet
-                                  </Link>
-                                </div>
                               </div>
                             </div>
                           ))}
@@ -903,15 +894,6 @@ export default function StudentHub() {
                                 ⚡ Mock Exam
                               </button>
                             </div>
-                            <div className="flex items-center justify-between text-[10px] font-bold text-textSecondary px-1 pt-1">
-                              <Link href={`/courses/${course.id}/notes`} className="hover:text-brand transition-colors">
-                                📖 Master Notes
-                              </Link>
-                              <span>•</span>
-                              <Link href={`/courses/${course.id}/cheat-sheet`} className="hover:text-brand transition-colors">
-                                📑 Revision Sheet
-                              </Link>
-                            </div>
                           </div>
                         </div>
                       ))}
@@ -985,15 +967,6 @@ export default function StudentHub() {
                             >
                               <span>🚀</span> Launch Learning Roadmap →
                             </Link>
-                            <div className="flex items-center justify-between text-[10px] font-bold text-textSecondary px-1 pt-1">
-                              <Link href={`/courses/${course.id}/notes`} className="hover:text-emerald-600 transition-colors">
-                                📖 Handbook Notes
-                              </Link>
-                              <span>•</span>
-                              <Link href={`/courses/${course.id}/cheat-sheet`} className="hover:text-emerald-600 transition-colors">
-                                📑 Cheat-Sheet
-                              </Link>
-                            </div>
                           </div>
                         </div>
                       );

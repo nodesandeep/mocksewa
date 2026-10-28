@@ -6,6 +6,7 @@ import { auth } from '@/utils/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import MarkdownNotesViewer from '@/components/MarkdownNotesViewer';
 import Logo from '@/components/Logo';
+import PageLoader from '@/components/PageLoader';
 import { 
   BookOpen, CheckCircle2, Lock, ArrowLeft, Award, 
   HelpCircle, Sparkles, ChevronRight, Play, Compass,
@@ -74,18 +75,7 @@ export default function GuidedMasteryPage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center space-y-4">
-        <div className="relative">
-          <div className="w-14 h-14 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
-          <Compass className="w-6 h-6 text-blue-400 absolute inset-0 m-auto animate-pulse" />
-        </div>
-        <div className="text-center space-y-1">
-          <p className="text-white text-sm font-black tracking-widest uppercase">Loading Guided Path...</p>
-          <p className="text-xs text-slate-400 font-medium">Curating chapter notes and milestone gating</p>
-        </div>
-      </div>
-    );
+    return <PageLoader />;
   }
 
   const completionRate = stats.total > 0 ? Math.round((stats.passed / stats.total) * 100) : 0;
@@ -119,26 +109,8 @@ export default function GuidedMasteryPage() {
 
           {/* Right Action Pills & Progress */}
           <div className="flex items-center gap-2 md:gap-3 shrink-0">
-            <Link
-              href={`/courses/${courseId}/cheat-sheet`}
-              className="px-3 py-1.5 bg-amber-50/80 hover:bg-amber-100 text-amber-900 rounded-xl text-xs font-bold border border-amber-200/80 transition-all flex items-center gap-1.5 shadow-2xs hover:scale-[1.02] active:scale-95"
-              title="View your saved key points and formulas"
-            >
-              <Bookmark className="w-3.5 h-3.5 text-amber-600" />
-              <span className="hidden sm:inline">Cheat-Sheet</span>
-            </Link>
-
-            <Link
-              href={`/courses/${courseId}/notes`}
-              className="px-3 py-1.5 bg-blue-50/80 hover:bg-blue-100 text-blue-800 rounded-xl text-xs font-bold border border-blue-200/80 transition-all flex items-center gap-1.5 shadow-2xs hover:scale-[1.02] active:scale-95"
-              title="View complete handbook notes and print PDF"
-            >
-              <BookOpen className="w-3.5 h-3.5 text-blue-600" />
-              <span className="hidden sm:inline">Master Notes</span>
-            </Link>
-
             {/* Progress Bar Badge */}
-            <div className="hidden md:flex items-center gap-3 pl-3 border-l border-slate-200">
+            <div className="flex items-center gap-3">
               <div className="text-right">
                 <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Mastery</p>
                 <p className="text-xs font-black text-slate-800">
