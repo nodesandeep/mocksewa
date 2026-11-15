@@ -32,6 +32,7 @@ import PaymentModal from "./PaymentModal";
 import RestrictedAccessModal from "./RestrictedAccessModal";
 
 import Logo from "./Logo";
+import PageLoader from "./PageLoader";
 
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -241,23 +242,7 @@ export default function StudentHub() {
   }, [activeTab]);
 
   if (authLoading || loading) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background">
-        <div className="relative">
-          <div className="w-24 h-24 bg-brand/5 rounded-[2rem] flex items-center justify-center text-4xl animate-pulse">
-          </div>
-          <div className="absolute inset-0 border-4 border-brand/10 border-t-brand rounded-[2rem] animate-spin"></div>
-        </div>
-        <div className="mt-8 text-center space-y-2">
-          <h2 className="text-xl font-black text-textPrimary tracking-tighter uppercase italic">
-            Learner Dashboard
-          </h2>
-          <p className="text-[10px] font-black text-textSecondary uppercase tracking-[0.3em]">
-            Loading Dashboard...
-          </p>
-        </div>
-      </div>
-    );
+    return <PageLoader />;
   }
 
   const stats = (() => {
@@ -680,7 +665,7 @@ export default function StudentHub() {
                       <div className="flex items-center gap-4 text-center sm:text-left">
                         <div className="text-2xl">⚠️</div>
                         <div>
-                          <h4 className="text-sm font-black text-rose-600 uppercase tracking-tighter">Synchronization Conflict</h4>
+                          <h4 className="text-sm font-black text-rose-600 uppercase tracking-tighter">Connection Notice</h4>
                           <p className="text-[10px] font-bold text-rose-500/80 uppercase tracking-widest">{error}</p>
                         </div>
                       </div>
@@ -688,7 +673,7 @@ export default function StudentHub() {
                         onClick={() => fetchData(true)}
                         className="px-6 py-2 bg-rose-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-700 transition-all shadow-lg"
                       >
-                        Force Pipeline Reset
+                        Retry Loading
                       </button>
                     </div>
                   )}
@@ -1038,9 +1023,7 @@ export default function StudentHub() {
                           <div className="h-full flex flex-col items-center justify-center text-center p-8 grayscale opacity-50 space-y-4">
                             <div className="text-4xl">📡</div>
                             <p className="text-xs font-bold text-textSecondary">
-                              Not enough data to triangulate your performance.{" "}
-                              <br />
-                              Complete 3 or more mock tests.
+                              Complete 3 or more mock tests to generate your subject-wise proficiency breakdown.
                             </p>
                           </div>
                         )}
@@ -1070,7 +1053,7 @@ export default function StudentHub() {
                         <div className="relative z-10 space-y-5">
                           <div className="flex justify-between items-center">
                             <div className="text-[10px] font-black uppercase tracking-widest text-blue-400">
-                              Prescriptive Insight
+                              Study Recommendation
                             </div>
                             <span className="text-[10px] bg-brand text-white px-2 py-0.5 rounded-full font-black animate-pulse">
                               Performance Insights
@@ -1078,21 +1061,21 @@ export default function StudentHub() {
                           </div>
                           <h4 className="text-2xl font-black leading-tight italic text-white">
                             {stats.mastery.length === 0 ? (
-                              "Initiate your first diagnostic mock to generate your Performance Profile."
+                              "Take your first diagnostic mock test to unlock your topic-wise mastery overview."
                             ) : parseInt(stats.accuracy) > 85 ? (
-                              "Outstanding consistency detected. You are ready for the Final Mocks. Maintain this momentum."
+                              "Outstanding accuracy! You are consistently scoring above 85%. Keep up this momentum for the upcoming exams."
                             ) : (
                               <>
-                                Your immediate focus should be{" "}
+                                We recommend prioritizing{" "}
                                 <span className="text-blue-400 underline decoration-2">
                                   {
                                     stats.mastery[stats.mastery.length - 1]
                                       ?.name
                                   }
                                 </span>
-                                . You are at{" "}
+                                . You are currently at{" "}
                                 {stats.mastery[stats.mastery.length - 1]?.score}
-                                %. Review mistakes to balance your shape.
+                                %. Review your incorrect questions to strengthen this topic.
                               </>
                             )}
                           </h4>
@@ -1514,8 +1497,8 @@ function MistakeBank({
 
   if (loading) {
     return (
-      <div className="p-20 text-center animate-pulse text-textSecondary font-black uppercase tracking-widest">
-        Syncing Revision Vault...
+      <div className="p-20 text-center animate-pulse text-textSecondary font-black uppercase tracking-widest text-xs">
+        Loading Saved Questions...
       </div>
     );
   }
@@ -1734,8 +1717,8 @@ function Leaderboard({ currentUserId }) {
   };
   if (loading)
     return (
-      <div className="p-20 text-center animate-pulse text-textSecondary font-black uppercase tracking-widest">
-        Compiling Global Rankings...
+      <div className="p-20 text-center animate-pulse text-textSecondary font-black uppercase tracking-widest text-xs">
+        Loading All-Nepal Rankings...
       </div>
     );
 
@@ -1821,7 +1804,7 @@ function StudyRoom({ course, onClose, onStartQuiz, setRestrictedModalOpen, allSu
                 {course.title}
               </h4>
               <p className="text-[9px] font-black text-brand uppercase tracking-[0.2em] mt-1">
-                Active Curriculum Stream
+                Official Course Syllabus
               </p>
             </div>
           </div>
@@ -1845,10 +1828,10 @@ function StudyRoom({ course, onClose, onStartQuiz, setRestrictedModalOpen, allSu
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-400 p-6 text-center">
               <Loader2 className="w-10 h-10 animate-spin mb-4 text-blue-500" />
               <p className="text-lg font-medium animate-pulse">
-                {loadTimeout ? "Curriculum pipeline sync is taking longer than usual..." : "Curriculum pipeline initialization pending..."}
+                {loadTimeout ? "Curriculum loading is taking longer than usual..." : "Loading curriculum and notes..."}
               </p>
               <p className="text-sm mt-2">
-                {loadTimeout ? "We're attempting a secure fallback connection." : "Connecting to secure data nodes..."}
+                {loadTimeout ? "Attempting connection to course server..." : "Fetching latest syllabus updates..."}
               </p>
               {loadTimeout && (
                 <button 

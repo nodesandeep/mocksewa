@@ -20,7 +20,7 @@ export async function generateMetadata() {
       default: "myMockSewa | Nepal's #1 Mock Test Platform for PSC, NEC, NMC & NEA",
       template: "%s | myMockSewa"
     },
-    description: "Crack Nepal's toughest exams with MyMockSewa. Premium mock tests for Loksewa (PSC), NEA, TSC, NEC Engineering License (Civil/Electrical), and NMC Medical License. Features real-time national ranking, Smart Learning Studio hints, and AI analytics.",
+    description: "Crack Nepal's toughest exams with MyMockSewa. Premium mock tests for Loksewa (PSC), NEA, TSC, NEC Engineering License (Civil/Electrical), and NMC Medical License. Features real-time national ranking, Smart Learning Studio hints, and topic-wise performance analytics.",
     keywords: [
       "Loksewa Preparation Nepal 2083", 
       "NEA Level 5 Electrical Mock Tests", 

@@ -5,6 +5,7 @@ import { db } from '@/utils/firebase';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import Link from 'next/link';
 import Logo from '@/components/Logo';
+import PageLoader from '@/components/PageLoader';
 import { motion } from 'framer-motion';
 
 export default function ExamClient({ slug = '' }) {
@@ -31,7 +32,7 @@ export default function ExamClient({ slug = '' }) {
     if (slug) fetchExam();
   }, [slug]);
 
-  if (loading) return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white font-black italic animate-pulse">Synchronizing {examTitle} Ecosystem...</div>;
+  if (loading) return <PageLoader />;
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans selection:bg-blue-600 selection:text-white transition-colors duration-300">

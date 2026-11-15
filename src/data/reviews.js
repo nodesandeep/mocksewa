@@ -1,11 +1,11 @@
 export const reviews = [
-  { name: "Sagar M.", role: "NEC Electrical Candidate", text: "I improved my national NEA rank from 500+ to Top 100 within a month. The Radar Chart showed me exactly which sub-topics I was failing in." },
+  { name: "Sagar M.", role: "NEC Electrical Candidate", text: "I improved my national NEA rank from 500+ to Top 100 within a month. The topic breakdown showed me exactly which sub-topics I was failing in." },
   { name: "Anita K.", role: "PSC Aspirant", text: "Best platform for PSC preparation in Nepal. The Mistake Bank is a game changer for memory retention during high-pressure MCQ exams." },
   { name: "Binod T.", role: "NEC Mechanical Engineering", text: "The Mechanical Engineering sets are highly accurate to the latest NEC syllabus. Passed my license exam on the first try!" },
   { name: "Dr. Samikshya", role: "MBBS License Aspirant", text: "The 💡 hints for medical questions are exceptionally detailed. It feels like having a personal tutor for the NMC exam." },
   { name: "Ramesh B.", role: "Civil Engineering NEC", text: "Highly recommended for Civil Engineering license prep. The interface is smooth and the question quality is top-notch." },
   { name: "Sunita G.", role: "PSC Technical (Level 7)", text: "The national ranking system motivated me to work harder every day. Secured my PSC position thanks to myMockSewa." },
-  { name: "Anish J.", role: "Computer Engineering NEC", text: "The only platform in Nepal that truly understands the Computer Engineering NEC pattern. The AI analysis is spot on." },
+  { name: "Anish J.", role: "Computer Engineering NEC", text: "The only platform in Nepal that truly understands the Computer Engineering NEC pattern. The topic-wise performance analysis is spot on." },
   { name: "Deepak R.", role: "NEA Level 5 Electrical", text: "Practicing here made the actual NEA exam feel like a walk in the park. The time management tools are essential." },
   { name: "Pratima S.", role: "NMC License Candidate", text: "The clinical scenario questions are excellent. They really challenge your understanding of medical concepts." },
   { name: "Kiran L.", role: "Mechanical Engineer NEC", text: "Great variety of Mechanical MCQs. The focus on thermodynamics and fluid mechanics was particularly helpful." },

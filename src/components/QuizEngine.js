@@ -28,6 +28,7 @@ import {
 } from "recharts";
 
 import BrandName from "./BrandName";
+import PageLoader from "./PageLoader";
 import FormattedQuestionText from "./FormattedQuestionText";
 
 import { motion, AnimatePresence } from "framer-motion";
@@ -360,17 +361,7 @@ const qRef = fireDoc(db, "questions", m.questionId || m.id);
       console.error(err);
     }
   };
-  if (loading)
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950">
-        <div className="space-y-4 text-center">
-          <div className="w-16 h-16 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin mx-auto" />
-          <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">
-            Calibrating Exam Pod...
-          </p>
-        </div>
-      </div>
-    );
+  if (loading) return <PageLoader />;
 
   if (error) {
     return (

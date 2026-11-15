@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import MaintenancePage from './MaintenancePage';
+import PageLoader from './PageLoader';
 
 export default function AppWrapper({ children }) {
   const [isMaintenance, setIsMaintenance] = useState(false);
@@ -22,11 +23,7 @@ export default function AppWrapper({ children }) {
   }, []);
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-900">
-        <div className="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (isMaintenance) {

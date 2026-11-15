@@ -170,24 +170,79 @@ export default function LandingPage() {
             </div>
 
             <div className="hidden lg:block relative">
-               <div className="bg-white p-8 rounded-[3rem] shadow-2xl border border-slate-100 relative z-10">
-                  <div className="flex items-center justify-between mb-8">
-                     <h4 className="font-black text-xl text-slate-900 italic">Live Excellence Radar</h4>
-                     <span className="px-3 py-1 bg-emerald-100 text-emerald-600 rounded-full text-[10px] font-black uppercase">Live Analytics</span>
+               <div className="bg-white p-8 rounded-[3rem] shadow-2xl border border-slate-100 relative z-10 space-y-6">
+                  {/* Card Header */}
+                  <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                     <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-black text-lg">
+                           🏛️
+                        </div>
+                        <div>
+                           <h4 className="font-black text-base text-slate-900 leading-tight">Loksewa & Engineering</h4>
+                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Study Pathway</p>
+                        </div>
+                     </div>
+                     <span className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black uppercase tracking-wider border border-emerald-100">
+                        In Progress
+                     </span>
                   </div>
-                  <div className="h-[350px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <RadarChart cx="50%" cy="50%" outerRadius="80%" data={mockRadarData}>
-                        <PolarGrid stroke="#e2e8f0" />
-                        <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 10, fontWeight: 800 }} />
-                        <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                        <Radar name="You" dataKey="A" stroke="#2563eb" fill="#3b82f6" fillOpacity={0.6} dot />
-                      </RadarChart>
-                    </ResponsiveContainer>
+
+                  {/* Chapter Milestone */}
+                  <div className="p-5 bg-slate-50/80 rounded-2xl border border-slate-100 space-y-3">
+                     <div className="flex items-center justify-between text-xs font-black">
+                        <span className="text-slate-700">Chapter 1.1: Governance & Acts</span>
+                        <span className="text-blue-600">85% Complete</span>
+                     </div>
+                     <div className="w-full h-2 bg-slate-200/70 rounded-full overflow-hidden">
+                        <div className="h-full bg-blue-600 rounded-full" style={{ width: '85%' }}></div>
+                     </div>
+                     <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                        Topic notes with formula mnemonics (सूत्र) and past question alerts.
+                     </p>
+                  </div>
+
+                  {/* Step Journey List */}
+                  <div className="space-y-3">
+                     <div className="flex items-center justify-between p-3.5 bg-blue-50/50 rounded-xl border border-blue-100/60">
+                        <div className="flex items-center gap-3">
+                           <span className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-black">✓</span>
+                           <div>
+                              <p className="text-xs font-black text-slate-900">Topic 1: Constitutional Provisions</p>
+                              <p className="text-[10px] text-slate-500 font-medium">Bite-sized slide notes + Recall quiz</p>
+                           </div>
+                        </div>
+                        <span className="text-[10px] font-black uppercase text-blue-700 tracking-wider">Passed (10/10)</span>
+                     </div>
+
+                     <div className="flex items-center justify-between p-3.5 bg-white rounded-xl border border-slate-100 shadow-sm">
+                        <div className="flex items-center gap-3">
+                           <span className="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-black">✓</span>
+                           <div>
+                              <p className="text-xs font-black text-slate-900">Topic 2: Administrative Regulations</p>
+                              <p className="text-[10px] text-slate-500 font-medium">Verified explanations & past trends</p>
+                           </div>
+                        </div>
+                        <span className="text-[10px] font-black uppercase text-emerald-700 tracking-wider">Passed (9/10)</span>
+                     </div>
+
+                     <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-100">
+                        <div className="flex items-center gap-3">
+                           <span className="w-6 h-6 rounded-full bg-amber-500 text-white flex items-center justify-center text-xs font-black">⏱️</span>
+                           <div>
+                              <p className="text-xs font-black text-slate-900">Final Timed Mock Test</p>
+                              <p className="text-[10px] text-slate-500 font-medium">Full exam simulation with national ranking</p>
+                           </div>
+                        </div>
+                        <span className="text-[10px] font-black uppercase text-amber-700 tracking-wider">Top 2% Rank</span>
+                     </div>
+                  </div>
+
+                  {/* Trust Footer */}
+                  <div className="pt-2 flex items-center justify-between text-[11px] font-bold text-slate-400">
+                     <span>✓ 100% Syllabus-Aligned</span>
+                     <span className="text-blue-600">Untimed Study · Timed Final Mock</span>
                   </div>
                </div>
-               <div className="absolute -top-10 -right-10 w-64 h-64 bg-blue-600/10 rounded-full blur-[80px] -z-10 animate-pulse"></div>
-               <div className="absolute -bottom-10 -left-10 w-64 h-64 bg-indigo-600/10 rounded-full blur-[80px] -z-10 animate-pulse"></div>
             </div>
           </div>
         </header>
@@ -372,7 +427,7 @@ export default function LandingPage() {
                   {[
                     { t: "Structured Explanations", d: "Segmented breakdowns that help you understand the 'Why' before the 'What'." },
                     { t: "National Peer Analytics", d: "See how you compare against thousands of aspirants across Nepal in real-time." },
-                    { t: "Error Identification", d: "AI-driven insights that pinpoint exactly where your logic failed." }
+                    { t: "Concept Rationales", d: "Detailed pedagogical explanations and past question trends for every MCQ." }
                   ].map((f, i) => (
                     <div key={i} className="flex gap-4">
                       <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 mt-1">✓</div>
@@ -493,7 +548,7 @@ export default function LandingPage() {
                  <div className="grid sm:grid-cols-2 gap-4">
                     {[
                       'Unlimited Mock Sessions',
-                      'Deep AI Performance Insights',
+                      'In-Depth Topic Mastery Analytics',
                       'Strategic Mistake Bank',
                       'National Peer Ranking',
                       'Verified Expert 💡 Hints',

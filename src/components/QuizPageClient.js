@@ -3,6 +3,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import QuizEngine from "@/components/QuizEngine";
+import PageLoader from "@/components/PageLoader";
 
 export default function QuizPageClient({ quizId }) {
   const { user, loading } = useAuth();
@@ -14,12 +15,7 @@ export default function QuizPageClient({ quizId }) {
     }
   }, [user, loading, router]);
 
-  if (loading)
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        Loading Quiz Session...
-      </div>
-    );
+  if (loading) return <PageLoader />;
   if (!user || user.role !== "student") return null;
 
   return (
